@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"c:/Users/julie/Documents/DEV/tgs-dashboard/.claude/commands\")",
+      "PowerShell(& \"C:\\\\Users\\\\julie\\\\Documents\\\\DEV\\\\tgs-dashboard\\\\.venv\\\\Scripts\\\\pip.exe\" show uvicorn 2>&1)",
+      "PowerShell(& curl.exe -s -w \"`n%{http_code}\" \"http://localhost:8000/api/overview/user-growth?segment=release\" 2>&1)",
+      "PowerShell(& curl.exe -s -w \"`n%{http_code}\" \"http://localhost:8000/api/alerts/schedule\" 2>&1)",
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "mcp__claude_ai_Supabase__list_tables"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\julie\\Documents\\DEV\\tgs-dashboard\\.claude"
+    ]
+  }
+}
