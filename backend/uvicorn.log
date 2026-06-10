@@ -140,3 +140,362 @@ INFO:     127.0.0.1:57377 - "GET /api/profils/spot-distribution?segment=release 
 INFO:     127.0.0.1:57380 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57379 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57378 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60493 - "GET /api/users/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49780 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49784 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49783 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49779 - "GET /api/profils/spot-distribution?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55091 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55433 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55434 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54613 - "GET /api/profils/spot-distribution?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54619 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:54625 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54640 - "GET /api/usage/timeline?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54636 - "GET /api/usage/sessions-per-week-since-signup?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54637 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54639 - "GET /api/usage/sessions?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54643 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61805 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54631 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54705 - "GET /api/usage/sessions?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63567 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59772 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:56207 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:57058 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:57175 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59097 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53374 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59944 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56956 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56974 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58403 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50651 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50664 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51517 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53381 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56238 - "GET /api/usage/sessions?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56245 - "GET /api/users/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57063 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57074 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57075 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57092 - "GET /api/profils/spot-distribution?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63002 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63008 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58195 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64824 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57835 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57850 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60525 - "GET /api/overview/user-growth?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60530 - "GET /api/overview/user-growth?segment=testing HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60535 - "GET /api/overview/user-growth?segment=friends HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60542 - "GET /api/overview/user-growth?segment=work HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60549 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60555 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60560 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60571 - "GET /api/usage/sessions?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58250 - "GET /api/usage/sessions-per-week-since-signup?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58255 - "GET /api/usage/sessions-per-week-since-signup?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58259 - "GET /api/usage/timeline?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63557 - "GET /api/usage/timeline?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63561 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54468 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61721 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59111 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51327 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59861 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62850 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61169 - "GET /api/users/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63288 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63298 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63299 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63306 - "GET /api/profils/spot-distribution?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63319 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51730 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51741 - "GET /api/usage/sessions?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60968 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58595 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58597 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58599 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62407 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62415 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62420 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62423 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62425 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62431 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54391 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61629 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61632 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61634 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:61763 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61765 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61788 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52566 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54232 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54238 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:54242 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57453 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65480 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65490 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65495 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65498 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50982 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63550 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55969 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64367 - "GET /api/equipments/by-type?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64373 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64378 - "GET /api/equipments/coverage?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64385 - "GET /api/equipments/by-type?segment=testing HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55858 - "GET /api/equipments/coverage?segment=testing HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55862 - "GET /api/equipments/coverage?segment=work HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55868 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55873 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55875 - "GET /api/profils/level-by-sport?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55881 - "GET /api/profils/level-by-sport?segment=testing HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55885 - "GET /api/profils/level-by-sport?segment=friends HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52638 - "GET /api/profils/level-by-sport?segment=work HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52644 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:52645 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:52651 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52650 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52657 - "GET /api/profils/spots-per-profile?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52658 - "GET /api/profils/spots-per-profile-detail?segment=beta HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52664 - "GET /api/profils/spots-per-profile?segment=testing HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52665 - "GET /api/profils/spots-per-profile-detail?segment=testing HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56582 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61079 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61086 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61089 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:61097 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52698 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56424 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56428 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56439 - "GET /api/usage/page-views?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56719 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:56724 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55277 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58773 - "GET /api/equipments/by-type?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57967 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57972 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57976 - "GET /api/usage/visit-duration?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:57979 - "GET /api/usage/visit-duration?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58271 - "GET /api/usage/visit-duration?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:58274 - "GET /api/usage/visit-duration?segment=release HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:63180 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63194 - "GET /api/usage/visit-duration?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63209 - "GET /api/usage/visit-duration?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63219 - "GET /api/usage/visit-duration?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54030 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63284 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53809 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:53817 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53823 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64433 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64441 - "GET /api/usage/sessions-per-week-since-signup?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64444 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64451 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65181 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60431 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:62580 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64454 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64458 - "GET /api/usage/daily-active-users?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55575 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56144 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56153 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56157 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56169 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56172 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56175 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:56180 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56183 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61483 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:53808 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53812 - "GET /api/usage/timeline?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53816 - "GET /api/usage/timeline?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53821 - "GET /api/usage/daily-active-users?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50372 - "GET /api/usage/sessions?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50376 - "GET /api/usage/page-views?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49922 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49928 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58067 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58073 - "GET /api/equipments/names?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58086 - "GET /api/equipments/names?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55577 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51693 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51703 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51707 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51717 - "GET /api/usage/page-views?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61813 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65142 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65154 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65162 - "GET /api/equipments/by-type?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65167 - "GET /api/equipments/names?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58819 - "GET /api/equipments/coverage?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58832 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58836 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58842 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55452 - "GET /api/usage/user-visits-pareto?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59490 - "GET /api/usage/user-visits-pareto?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59497 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59508 - "GET /api/usage/user-visits-pareto?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64148 - "GET /api/usage/user-visits-pareto?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64155 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:64160 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64163 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64166 - "GET /api/usage/daily-active-users?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64171 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51123 - "GET /api/usage/timeline?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51127 - "GET /api/usage/visit-duration?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51134 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51431 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51436 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51441 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56438 - "GET /api/equipments/characteristics?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54808 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54813 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54821 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54826 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54832 - "GET /api/usage/daily-active-users?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51776 - "GET /api/users/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51784 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51794 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/usage/page-views?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51801 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51805 - "GET /api/usage/user-visits-pareto?segment=beta&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60212 - "GET /api/usage/user-visits-pareto?segment=testing&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60318 - "GET /api/usage/user-visits-pareto?segment=friends&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55838 - "GET /api/usage/timeline?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55843 - "GET /api/usage/visit-duration?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55847 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55851 - "GET /api/usage/daily-active-users?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50520 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50525 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65411 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65415 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65420 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59937 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59942 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59945 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59950 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59952 - "GET /api/equipments/characteristics?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59956 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50982 - "GET /api/usage/sessions?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50986 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50494 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50500 - "GET /api/usage/sessions?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60057 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60063 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60065 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60068 - "GET /api/equipments/characteristics?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54136 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61783 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62365 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62369 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62375 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50902 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61364 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58800 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57575 - "GET /api/equipments/characteristics?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57582 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:57584 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57591 - "GET /api/usage/page-views?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57602 - "GET /api/usage/user-visits-pareto?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63804 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63818 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63821 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63826 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58194 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57617 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56531 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57007 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57712 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55385 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51349 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52560 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57954 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57959 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62527 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62532 - "GET /api/usage/sessions?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62536 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57163 - "GET /api/usage/user-visits-pareto?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57175 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63640 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63649 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63664 - "GET /api/usage/page-views?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63667 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50733 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59202 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59648 - "GET /api/usage/page-views?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59653 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56467 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56472 - "GET /api/usage/visit-frequency?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59002 - "GET /api/usage/visit-frequency?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56786 - "GET /api/usage/visit-frequency?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56792 - "GET /api/usage/visit-frequency?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58052 - "GET /api/usage/visit-frequency?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58056 - "GET /api/usage/user-visits-pareto?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58075 - "GET /api/usage/user-visits-pareto?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58080 - "GET /api/usage/user-visits-pareto?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58090 - "GET /api/usage/visit-duration?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58121 - "GET /api/usage/visit-duration?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58130 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58147 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58153 - "GET /api/usage/daily-active-users?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58186 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58191 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58216 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:58222 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51220 - "GET /api/equipments/coverage?segment=all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51224 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51226 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51229 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51236 - "GET /api/profils/spots-per-profile?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51237 - "GET /api/profils/spots-per-profile-detail?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62740 - "GET /api/profils/spot-distribution?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62768 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56593 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64828 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64832 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:64838 - "GET /api/usage/page-views?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:64841 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64844 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:64846 - "GET /api/usage/daily-active-users?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64849 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64854 - "GET /api/usage/page-views?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56322 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56327 - "GET /api/usage/visit-duration?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56332 - "GET /api/usage/timeline?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56336 - "GET /api/usage/user-visits-pareto?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56340 - "GET /api/usage/user-visits-pareto?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56346 - "GET /api/usage/visit-frequency?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56374 - "GET /api/usage/sessions?segment=release&days=1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:56379 - "GET /api/usage/sessions?segment=release&days=1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:56382 - "GET /api/usage/sessions?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56388 - "GET /api/users/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56393 - "GET /api/profils/level-by-sport?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56402 - "GET /api/overview/user-growth?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56413 - "GET /api/alerts/schedule?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56418 - "GET /api/usage/page-views?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56420 - "GET /api/usage/sessions-per-week-since-signup?segment=release HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56424 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56429 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:59107 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54951 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54957 - "GET /api/usage/sessions?segment=release&days=30 HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:54962 - "GET /api/usage/sessions?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62927 - "GET /api/usage/sessions?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63092 - "GET /api/usage/sessions?segment=release&days=30 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63096 - "GET /api/usage/sessions?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63100 - "GET /api/usage/daily-active-users?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51174 - "GET /api/usage/page-views?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51179 - "GET /api/usage/page-views?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51185 - "GET /api/usage/daily-active-users?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51189 - "GET /api/usage/user-visits-pareto?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51192 - "GET /api/usage/visit-frequency?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51213 - "GET /api/usage/timeline?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51224 - "GET /api/usage/visit-duration?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51227 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51232 - "GET /api/usage/sessions-per-week-since-signup?segment=release&days=1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51555 - "GET /api/usage/sessions?segment=release&days=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51569 - "GET /api/users/list HTTP/1.1" 200 OK

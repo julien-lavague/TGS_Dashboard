@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from routers import alerts, overview, usage, profils, users
+from routers import alerts, overview, usage, profils, users, equipments
 
 app = FastAPI(title="TGS Metrics Dashboard", version="0.1.0")
 
@@ -18,6 +18,7 @@ app.include_router(overview.router)
 app.include_router(usage.router)
 app.include_router(profils.router)
 app.include_router(users.router)
+app.include_router(equipments.router)
 
 
 @app.get("/health")

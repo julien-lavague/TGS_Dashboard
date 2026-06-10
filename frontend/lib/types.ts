@@ -34,3 +34,40 @@ export interface ProfileDetailUser {
 export interface SpotsPerProfileDetailResponse {
   users: ProfileDetailUser[];
 }
+
+export interface EquipmentItem {
+  name: string;
+  user: string;
+}
+
+export interface EquipmentCategory {
+  type: string;
+  items: EquipmentItem[];
+}
+
+export interface EquipmentSport {
+  sport: string;
+  categories: EquipmentCategory[];
+}
+
+export interface EquipmentNamesResponse {
+  sports: EquipmentSport[];
+}
+
+export interface EquipmentCharStat {
+  sport: string;
+  level: string;
+  type: string;
+  spec: string;
+  unit: string;
+  count: number;
+  min: number;
+  max: number;
+  mean: number;
+  median: number;
+}
+
+export interface EquipmentCharacteristicsResponse {
+  figures: Record<string, string>;
+  stats: EquipmentCharStat[];
+}

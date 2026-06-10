@@ -8,6 +8,10 @@ from core.user_segments import filter_users
 LEVEL_ORDER = ["débutant", "intermédiaire", "confirmé"]
 
 
+def _join_emails(series: pd.Series) -> str:
+    return "<br>".join(sorted(e for e in series.dropna() if e))
+
+
 async def get_spot_distribution_figure(segment: str) -> str:
     df_profiles, df_users, df_spots = await asyncio.gather(
         get_dataframe("user_profiles"),
@@ -20,9 +24,12 @@ async def get_spot_distribution_figure(segment: str) -> str:
     df_filtered_users = filter_users(df_users, segment)
     df_profiles = df_profiles[df_profiles["user_id"].isin(df_filtered_users["id"])]
 
+    email_map = df_filtered_users.set_index("id")["email"].to_dict()
+
     # Explode the favorite_spots UUID array into one row per spot per profile
-    df_exploded = df_profiles[["favorite_spots"]].explode("favorite_spots").dropna(subset=["favorite_spots"])
+    df_exploded = df_profiles[["user_id", "favorite_spots"]].explode("favorite_spots").dropna(subset=["favorite_spots"])
     df_exploded = df_exploded.rename(columns={"favorite_spots": "spot_id"})
+    df_exploded["email"] = df_exploded["user_id"].map(email_map)
 
     # Join with spots to get names
     spot_names = df_spots[["id", "name"]].rename(columns={"id": "spot_id"})
@@ -31,9 +38,9 @@ async def get_spot_distribution_figure(segment: str) -> str:
 
     df_counts = (
         df_merged.groupby("name")
-        .size()
-        .reset_index(name="count")
-        .sort_values("count", ascending=True)  # ascending for horizontal bar (top = highest)
+        .agg(count=("email", "count"), emails=("email", _join_emails))
+        .reset_index()
+        .sort_values("count", ascending=True)
     )
 
     fig = px.bar(
@@ -44,8 +51,12 @@ async def get_spot_distribution_figure(segment: str) -> str:
         title=f"Spot Distribution in User Profiles ({segment})",
         labels={"count": "Number of profiles", "name": "Spot"},
         text="count",
+        custom_data=["emails"],
     )
-    fig.update_traces(textposition="outside")
+    fig.update_traces(
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>Count: %{x}<br><br>%{customdata[0]}<extra></extra>",
+    )
     fig.update_layout(
         height=max(400, len(df_counts) * 32 + 100),
         margin=dict(l=200, r=60, t=60, b=40),
@@ -69,10 +80,13 @@ async def get_spots_per_profile_figure(segment: str) -> str:
         lambda x: len(x) if isinstance(x, list) else 0
     )
 
+    email_map = df_filtered_users.set_index("id")["email"].to_dict()
+    df_profiles["email"] = df_profiles["user_id"].map(email_map)
+
     df_dist = (
         df_profiles.groupby("spot_count")
-        .size()
-        .reset_index(name="num_profiles")
+        .agg(num_profiles=("email", "count"), emails=("email", _join_emails))
+        .reset_index()
     )
 
     fig = px.bar(
@@ -82,8 +96,12 @@ async def get_spots_per_profile_figure(segment: str) -> str:
         title=f"Number of Spots per Profile ({segment})",
         labels={"spot_count": "Number of spots", "num_profiles": "Number of profiles"},
         text="num_profiles",
+        custom_data=["emails"],
     )
-    fig.update_traces(textposition="outside")
+    fig.update_traces(
+        textposition="outside",
+        hovertemplate="<b>%{x} spot(s)</b><br>Count: %{y}<br><br>%{customdata[0]}<extra></extra>",
+    )
     fig.update_layout(
         height=400,
         margin=dict(l=60, r=60, t=60, b=60),
@@ -139,13 +157,20 @@ async def get_level_by_sport_figure(segment: str) -> str:
     df_filtered_users = filter_users(df_users, segment)
     df_profiles = df_profiles[df_profiles["user_id"].isin(df_filtered_users["id"])]
 
-    df = df_profiles[["sport_id", "level"]].dropna(subset=["sport_id", "level"])
+    df = df_profiles[["user_id", "sport_id", "level"]].dropna(subset=["sport_id", "level"])
 
     sport_names = df_sports[["id", "display_name"]].rename(columns={"id": "sport_id", "display_name": "sport"})
     df = df.merge(sport_names, on="sport_id", how="left")
     df["sport"] = df["sport"].fillna("Unknown")
 
-    df_counts = df.groupby(["sport", "level"]).size().reset_index(name="count")
+    email_map = df_filtered_users.set_index("id")["email"].to_dict()
+    df["email"] = df["user_id"].map(email_map)
+
+    df_counts = (
+        df.groupby(["sport", "level"])
+        .agg(count=("email", "count"), emails=("email", _join_emails))
+        .reset_index()
+    )
     df_counts["level"] = pd.Categorical(df_counts["level"], categories=LEVEL_ORDER, ordered=True)
     df_counts = df_counts.sort_values(["sport", "level"])
 
@@ -159,8 +184,12 @@ async def get_level_by_sport_figure(segment: str) -> str:
         labels={"count": "Number of profiles", "sport": "Sport", "level": "Level"},
         category_orders={"level": LEVEL_ORDER},
         text="count",
+        custom_data=["emails"],
     )
-    fig.update_traces(textposition="outside")
+    fig.update_traces(
+        textposition="outside",
+        hovertemplate="<b>%{x}</b> · %{fullData.name}<br>Count: %{y}<br><br>%{customdata[0]}<extra></extra>",
+    )
     fig.update_layout(
         height=450,
         margin=dict(l=60, r=60, t=60, b=80),

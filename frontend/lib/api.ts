@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AlertsResponse, FigureResponse, UsersListResponse, SpotsPerProfileDetailResponse } from "./types";
+import type { AlertsResponse, FigureResponse, UsersListResponse, SpotsPerProfileDetailResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse } from "./types";
 
 const client = axios.create({ baseURL: "/api" });
 
@@ -60,22 +60,57 @@ export const api = {
       client.get<UsersListResponse>("/users/list").then((r) => r.data),
   },
 
+  equipments: {
+    getCoverage: (segment = "all") =>
+      client
+        .get<FigureResponse>("/equipments/coverage", { params: { segment } })
+        .then((r) => r.data),
+    getByType: (segment = "all") =>
+      client
+        .get<FigureResponse>("/equipments/by-type", { params: { segment } })
+        .then((r) => r.data),
+    getNames: (segment = "all") =>
+      client
+        .get<EquipmentNamesResponse>("/equipments/names", { params: { segment } })
+        .then((r) => r.data),
+    getCharacteristics: (segment = "all") =>
+      client
+        .get<EquipmentCharacteristicsResponse>("/equipments/characteristics", { params: { segment } })
+        .then((r) => r.data),
+  },
+
   usage: {
-    getPageViews: (segment = "release") =>
+    getPageViews: (segment = "release", days?: number) =>
       client
-        .get<FigureResponse>("/usage/page-views", { params: { segment } })
+        .get<FigureResponse>("/usage/page-views", { params: { segment, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getSessions: (segment = "release") =>
+    getSessions: (segment = "release", days?: number) =>
       client
-        .get<FigureResponse>("/usage/sessions", { params: { segment } })
+        .get<FigureResponse>("/usage/sessions", { params: { segment, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getSessionsPerWeekSinceSignup: (segment = "release") =>
+    getSessionsPerWeekSinceSignup: (segment = "release", days?: number) =>
       client
-        .get<FigureResponse>("/usage/sessions-per-week-since-signup", { params: { segment } })
+        .get<FigureResponse>("/usage/sessions-per-week-since-signup", { params: { segment, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getTimeline: (segment = "release") =>
+    getTimeline: (segment = "release", days?: number) =>
       client
-        .get<FigureResponse>("/usage/timeline", { params: { segment } })
+        .get<FigureResponse>("/usage/timeline", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getVisitDuration: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/usage/visit-duration", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getDailyActiveUsers: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/usage/daily-active-users", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getUserVisitsPareto: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/usage/user-visits-pareto", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getVisitFrequency: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/usage/visit-frequency", { params: { segment, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
   },
 };
