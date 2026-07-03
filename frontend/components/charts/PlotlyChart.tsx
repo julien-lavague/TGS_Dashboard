@@ -20,10 +20,9 @@ export function PlotlyChart({ figure, className, onBarClick }: PlotlyChartProps)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data={parsed.data as any[]}
         layout={{
+          autosize: true,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ...(parsed.layout as any),
-          autosize: true,
-          margin: { l: 60, r: 30, t: 50, b: 60 },
           paper_bgcolor: "rgba(0,0,0,0)",
           plot_bgcolor: "rgba(0,0,0,0)",
           font: { family: "inherit" },

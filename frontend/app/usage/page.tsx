@@ -121,7 +121,11 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>
               Signed-in Users &amp; Visitors per{" "}
-              {timeRange === "all" ? "Month" : timeRange === "30d" ? "Week" : "Day"}
+              {timeRange === "all"
+                ? "Month"
+                : timeRange === "1d" || timeRange === "7d"
+                ? "Day"
+                : "Week"}
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[calc(100vh-260px)]">
@@ -189,10 +193,9 @@ export default function UsagePage() {
 }
 
 function ChartArea({ query }: { query: ReturnType<typeof useQuery<{ figure: string }>> }) {
-  if (query.isLoading) return <Placeholder text="Loading…" />;
+  if (query.isPending) return <Placeholder text="Loading…" />;
   if (query.isError) return <Placeholder text="Failed to load — is the backend running?" error />;
-  if (query.data) return <PlotlyChart figure={query.data.figure} className="h-full" />;
-  return null;
+  return <PlotlyChart figure={query.data.figure} className="h-full" />;
 }
 
 function Placeholder({ text, error }: { text: string; error?: boolean }) {

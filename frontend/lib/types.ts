@@ -25,6 +25,12 @@ export interface UsersListResponse {
   segments: Record<string, string[]>;
 }
 
+export interface AnonymousStatsResponse {
+  session_count: number;
+  page_view_count: number;
+  last_seen: string | null;
+}
+
 export interface ProfileDetailUser {
   email: string;
   spot_count: number;
@@ -70,4 +76,20 @@ export interface EquipmentCharStat {
 export interface EquipmentCharacteristicsResponse {
   figures: Record<string, string>;
   stats: EquipmentCharStat[];
+}
+
+export interface EquipmentQuantityStat {
+  sport: string;
+  level: string;
+  type: string;
+  user_count: number;
+  min: number;
+  max: number;
+  mean: number;
+  median: number;
+}
+
+export interface EquipmentQuantityResponse {
+  figure: string;
+  stats: EquipmentQuantityStat[];
 }

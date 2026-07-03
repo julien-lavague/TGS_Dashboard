@@ -177,6 +177,81 @@ async def get_equipment_names(segment: str) -> dict:
     return {"sports": sports}
 
 
+async def get_equipment_quantity_stats(segment: str) -> dict:
+    df_user_sports, df_equipments, df_users, df_sports = await asyncio.gather(
+        get_dataframe("user_sports"),
+        get_dataframe("user_equipments"),
+        get_dataframe("users"),
+        get_dataframe("sports"),
+    )
+
+    df_user_sports = df_user_sports[df_user_sports["is_active"] == True].copy()
+    df_equipments = df_equipments[df_equipments["is_active"] == True]
+
+    df_filtered_users = filter_users(df_users, segment)
+    df_user_sports = df_user_sports[df_user_sports["user_id"].isin(df_filtered_users["id"])]
+
+    sport_names = df_sports[["id", "display_name"]].rename(columns={"id": "sport_id", "display_name": "sport"})
+    df_user_sports = df_user_sports.merge(sport_names, on="sport_id", how="left")
+    df_user_sports["sport"] = df_user_sports["sport"].fillna("Unknown")
+
+    df = df_equipments.merge(
+        df_user_sports[["id", "user_id", "sport", "level"]].rename(columns={"id": "user_sport_id"}),
+        on="user_sport_id",
+        how="inner",
+    )
+
+    # Count items per (user, sport, level, type)
+    df_counts = (
+        df.groupby(["user_id", "sport", "level", "type"])
+        .size()
+        .reset_index(name="count")
+    )
+
+    df_counts["level"] = pd.Categorical(df_counts["level"], categories=LEVEL_ORDER, ordered=True)
+    df_counts = df_counts.sort_values(["sport", "level"])
+
+    stats = []
+    for (sport, level, eq_type), grp in df_counts.groupby(["sport", "level", "type"], observed=True):
+        vals = grp["count"]
+        stats.append({
+            "sport": sport,
+            "level": str(level),
+            "type": eq_type,
+            "user_count": int(len(vals)),
+            "min": int(vals.min()),
+            "max": int(vals.max()),
+            "mean": round(float(vals.mean()), 2),
+            "median": round(float(vals.median()), 2),
+        })
+
+    if df_counts.empty:
+        fig = px.bar(title="No equipment data")
+        fig.update_layout(height=450)
+        return {"figure": fig.to_json(), "stats": stats}
+
+    fig = px.box(
+        df_counts,
+        x="type",
+        y="count",
+        color="level",
+        facet_col="sport",
+        points="all",
+        title=f"Equipment quantity per user — by sport & level ({segment})",
+        labels={"count": "Items per user", "type": "Category", "level": "Level"},
+        category_orders={"level": LEVEL_ORDER, "type": list(SPEC_CONFIG.keys())},
+    )
+    fig.update_traces(boxmean=True)
+    fig.update_layout(
+        height=450,
+        margin=dict(l=60, r=60, t=80, b=60),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+    fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+    return {"figure": fig.to_json(), "stats": stats}
+
+
 async def get_equipment_characteristics(segment: str) -> dict:
     df_user_sports, df_equipments, df_users, df_sports = await asyncio.gather(
         get_dataframe("user_sports"),

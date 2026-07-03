@@ -2,11 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 
-export type TimeRange = "1d" | "7d" | "30d" | "all";
+export type TimeRange = "1d" | "7d" | "14d" | "21d" | "30d" | "all";
 
 const TIME_RANGES: { label: string; value: TimeRange }[] = [
   { label: "Last Day", value: "1d" },
   { label: "Last Week", value: "7d" },
+  { label: "Last 2 Weeks", value: "14d" },
+  { label: "Last 3 Weeks", value: "21d" },
   { label: "Last Month", value: "30d" },
   { label: "All", value: "all" },
 ];
@@ -14,6 +16,8 @@ const TIME_RANGES: { label: string; value: TimeRange }[] = [
 export const DAYS_FOR_RANGE: Record<TimeRange, number | undefined> = {
   "1d": 1,
   "7d": 7,
+  "14d": 14,
+  "21d": 21,
   "30d": 30,
   "all": undefined,
 };

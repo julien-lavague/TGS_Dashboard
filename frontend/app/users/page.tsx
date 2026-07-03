@@ -33,6 +33,11 @@ export default function UsersPage() {
     queryFn: api.users.getList,
   });
 
+  const { data: anonStats } = useQuery({
+    queryKey: ["users-anonymous-stats"],
+    queryFn: api.users.getAnonymousStats,
+  });
+
   const visibleSegments =
     segment === "all"
       ? SEGMENT_ORDER.filter((seg) => (data?.segments[seg]?.length ?? 0) > 0)
@@ -95,6 +100,31 @@ export default function UsersPage() {
             );
           }
         )}
+
+      {anonStats && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Anonymous Visitors
+              <Badge variant="secondary">{anonStats.session_count}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="pl-6 text-muted-foreground text-xs">Page views</TableCell>
+                  <TableCell className="font-mono text-xs">{anonStats.page_view_count}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="pl-6 text-muted-foreground text-xs">Last seen</TableCell>
+                  <TableCell className="font-mono text-xs">{anonStats.last_seen ?? "—"}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

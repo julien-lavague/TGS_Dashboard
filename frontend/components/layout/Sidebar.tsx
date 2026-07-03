@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BackendStatus } from "./BackendStatus";
 
 const NAV = [
   { href: "/overview", label: "Overview" },
@@ -38,6 +39,7 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <BackendStatus />
     </aside>
   );
 }

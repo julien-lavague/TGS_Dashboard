@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AlertsResponse, FigureResponse, UsersListResponse, SpotsPerProfileDetailResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse } from "./types";
+import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse } from "./types";
 
 const client = axios.create({ baseURL: "/api" });
 
@@ -58,6 +58,8 @@ export const api = {
   users: {
     getList: () =>
       client.get<UsersListResponse>("/users/list").then((r) => r.data),
+    getAnonymousStats: () =>
+      client.get<AnonymousStatsResponse>("/users/anonymous-stats").then((r) => r.data),
   },
 
   equipments: {
@@ -77,6 +79,17 @@ export const api = {
       client
         .get<EquipmentCharacteristicsResponse>("/equipments/characteristics", { params: { segment } })
         .then((r) => r.data),
+    getQuantityStats: (segment = "all") =>
+      client
+        .get<EquipmentQuantityResponse>("/equipments/quantity-stats", { params: { segment } })
+        .then((r) => r.data),
+  },
+
+  system: {
+    getHealth: () =>
+      client.get<{ status: string }>("/system/health").then((r) => r.data),
+    restart: () =>
+      client.post<{ restarting: boolean }>("/system/restart").then((r) => r.data),
   },
 
   usage: {

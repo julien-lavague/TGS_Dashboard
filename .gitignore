@@ -3,6 +3,7 @@
 *.json.bak
 
 # Python
+backend/_reload_sentinel.py
 __pycache__/
 *.py[cod]
 .venv/

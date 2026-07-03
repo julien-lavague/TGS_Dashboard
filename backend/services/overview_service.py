@@ -21,7 +21,14 @@ async def get_user_growth_figure(segment: str) -> str:
         .dt.to_period("W")
         .apply(lambda r: r.start_time)
     )
-    df_weekly = df_sorted.groupby("week").size().reset_index(name="new_users")
+    df_weekly = (
+        df_sorted.groupby("week")
+        .agg(
+            new_users=("email", "size"),
+            users=("email", lambda s: "<br>".join(s.dropna().astype(str))),
+        )
+        .reset_index()
+    )
 
     fig = px.bar(
         df_weekly,
@@ -29,6 +36,14 @@ async def get_user_growth_figure(segment: str) -> str:
         y="new_users",
         title="New Users Per Week",
         labels={"week": "Week", "new_users": "New Users"},
+        custom_data=["users"],
+    )
+    fig.update_traces(
+        hovertemplate=(
+            "<b>Week of %{x|%Y-%m-%d}</b><br>"
+            "New users: %{y}<br><br>"
+            "%{customdata[0]}<extra></extra>"
+        )
     )
     fig.update_layout(xaxis_tickformat="%Y-%m-%d")
     return fig.to_json()

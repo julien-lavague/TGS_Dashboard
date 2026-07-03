@@ -256,15 +256,13 @@ async def get_visit_duration_figure(segment: str, days: Optional[int] = None) ->
 
 
 async def get_daily_active_users_figure(segment: str, days: Optional[int] = None) -> str:
-    # Always load the full history — days only controls granularity, not the date range.
-    # Filtering to a short window would make the cumulative appear flat because most
-    # users first joined before the window starts.
     df_analytics, df_users = await asyncio.gather(
         get_dataframe("user_analytics"),
         get_dataframe("users"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = _filter_dev_urls(df_analytics).copy()
+    df_analytics = _apply_days_filter(df_analytics, days)
 
     if days is None:
         freq, period_label, tick_fmt = "M", "Month", "%Y-%m"
@@ -292,22 +290,14 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
     else:
         all_periods = []
 
-    # --- Cumulative unique signed-in users ---
-    df_signed = df_analytics[df_analytics["_uid_str"].isin(segment_user_ids)]
-    df_seen = df_signed.drop_duplicates(subset=["_uid_str", "period"])[["_uid_str", "period"]]
-
-    if not df_seen.empty and all_periods:
-        df_pivot = (
-            df_seen.assign(active=1)
-            .pivot_table(index="period", columns="_uid_str", values="active", aggfunc="max")
-            .reindex(index=all_periods)
-            .fillna(0)
-            .sort_index()
-            .cummax()
-        )
-        cumul_signed = df_pivot.sum(axis=1).rename("signed_in_users")
-    else:
-        cumul_signed = pd.Series(0, index=pd.Index(all_periods), name="signed_in_users")
+    # --- Distinct signed-in users active in each period (not cumulative) ---
+    id_to_email = dict(
+        zip(df_filtered_users["id"].dropna().astype(str), df_filtered_users["email"])
+    )
+    df_signed = df_analytics[df_analytics["_uid_str"].isin(segment_user_ids)].copy()
+    df_signed["email"] = df_signed["_uid_str"].map(id_to_email)
+    df_seen = df_signed.drop_duplicates(subset=["_uid_str", "period"])
+    signed_by_period = df_seen.groupby("period").size().rename("signed_in_users")
 
     # --- Anonymous visits per period (user_id is null) ---
     df_anon = df_analytics[df_analytics["user_id"].isna()]
@@ -316,17 +306,69 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
     df_combined = (
         pd.DataFrame({"period": all_periods})
         .set_index("period")
-        .join(cumul_signed)
+        .join(signed_by_period)
         .join(anon_by_period)
         .fillna(0)
         .reset_index()
     )
 
+    # --- Per-user presence (1 if that user was active in the period, else 0) ---
+    # Stacks to exactly the aggregate signed-in count, so the two views stay consistent.
+    if not df_seen.empty:
+        per_user = (
+            df_seen.assign(active=1)
+            .pivot_table(index="period", columns="email", values="active", aggfunc="max")
+            .reindex(index=all_periods)
+            .fillna(0)
+        )
+    else:
+        per_user = pd.DataFrame(index=pd.Index(all_periods))
+    user_emails = sorted(per_user.columns.tolist())
+
+    # --- Per-visitor presence among anonymous rows carrying a visitor_id ---
+    # visitor_id is a persistent per-browser id set client-side; it was only rolled
+    # out ~2026-06, and clients blocking cookies/localStorage never get one. So only a
+    # subset of anonymous rows can be attributed to a recurring visitor.
+    has_vid = df_anon["visitor_id"].notna() & (
+        df_anon["visitor_id"].astype(str).str.strip().ne("")
+    )
+    df_anon_id = df_anon[has_vid].copy()
+    df_anon_noid = df_anon[~has_vid]
+    # Untracked sessions can't be tied to a visitor — reported, not attributed.
+    n_untracked_sessions = int(df_anon_noid["session_id"].nunique())
+
+    if not df_anon_id.empty:
+        # "Recurring" = seen on 2+ distinct calendar days (independent of chart granularity).
+        days_per_vid = (
+            df_anon_id.assign(_day=df_anon_id["entry_dt"].dt.date)
+            .groupby("visitor_id")["_day"].nunique()
+        )
+        recurring_ids = sorted(days_per_vid[days_per_vid >= 2].index.tolist())
+        onetime_ids = sorted(days_per_vid[days_per_vid < 2].index.tolist())
+        per_visitor = (
+            df_anon_id.drop_duplicates(subset=["visitor_id", "period"])
+            .assign(active=1)
+            .pivot_table(index="period", columns="visitor_id", values="active", aggfunc="max")
+            .reindex(index=all_periods)
+            .fillna(0)
+        )
+    else:
+        recurring_ids, onetime_ids = [], []
+        per_visitor = pd.DataFrame(index=pd.Index(all_periods))
+
+    # Non-recurring tracked visitors collapsed into a single per-period count.
+    if onetime_ids:
+        onetime_by_period = per_visitor[onetime_ids].sum(axis=1)
+    else:
+        onetime_by_period = pd.Series(0.0, index=pd.Index(all_periods))
+
     fig = go.Figure()
+
+    # Aggregate ("gross mass") traces — indices 0 and 1.
     fig.add_trace(go.Bar(
         x=df_combined["period"],
         y=df_combined["signed_in_users"],
-        name="Signed-in Users (cumul.)",
+        name="Signed-in Users",
         marker_color="#636EFA",
     ))
     fig.add_trace(go.Bar(
@@ -336,14 +378,85 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
         marker_color="#EF553B",
     ))
 
+    # Detailed per-user traces — hidden by default.
+    for email in user_emails:
+        fig.add_trace(go.Bar(
+            x=all_periods,
+            y=per_user[email].tolist(),
+            name=email,
+            visible=False,
+        ))
+
+    # Detailed-visitor traces — hidden by default. Only anonymous rows with a
+    # visitor_id can be attributed; the untracked bulk is counted in the title only,
+    # so recurring visitors stay visible instead of being buried under it.
+    fig.add_trace(go.Bar(
+        x=all_periods,
+        y=onetime_by_period.tolist(),
+        name="One-time visitors",
+        marker_color="#C9CBCF",
+        visible=False,
+        hovertemplate="One-time visitors: %{y}<extra></extra>",
+    ))
+    for vid in recurring_ids:
+        fig.add_trace(go.Bar(
+            x=all_periods,
+            y=per_visitor[vid].tolist(),
+            name=f"{str(vid)[:8]}…",
+            visible=False,
+            hovertemplate=f"Recurring visitor {str(vid)[:12]}…: %{{y}}<extra></extra>",
+        ))
+
+    n_users = len(user_emails)
+    n_vis = 1 + len(recurring_ids)  # one-time bucket + one bar per recurring visitor
+    gross_title = f"Active Signed-in Users & Anonymous Visits per {period_label}"
+    detail_title = f"Active Signed-in Users (per user) per {period_label}"
+    visitor_title = (
+        f"Anonymous Visitors per {period_label} — "
+        f"{len(recurring_ids)} recurring, {len(onetime_ids)} one-time "
+        f"(+{n_untracked_sessions} untracked sessions w/o visitor_id)"
+    )
+
+    f_u, t_u = [False] * n_users, [True] * n_users
+    f_v, t_v = [False] * n_vis, [True] * n_vis
+
+    buttons = [
+        dict(
+            label="Gross mass", method="update",
+            args=[
+                {"visible": [True, True] + f_u + f_v},
+                {"title": gross_title, "barmode": "group"},
+            ],
+        ),
+        dict(
+            label="Detailed signed-in", method="update",
+            args=[
+                {"visible": [False, False] + t_u + f_v},
+                {"title": detail_title, "barmode": "stack"},
+            ],
+        ),
+        dict(
+            label="Detailed visitors", method="update",
+            args=[
+                {"visible": [False, False] + f_u + t_v},
+                {"title": visitor_title, "barmode": "stack"},
+            ],
+        ),
+    ]
+
     fig.update_layout(
-        title=f"Cumulative Signed-in Users & Anonymous Visits per {period_label}",
+        title=gross_title,
         barmode="group",
+        updatemenus=[dict(
+            type="buttons", direction="right", active=0, buttons=buttons,
+            x=0.0, xanchor="left", y=1.18, yanchor="top",
+            pad=dict(r=6, t=4), bgcolor="lightgray",
+        )],
         xaxis=dict(tickformat=tick_fmt, tickangle=-45),
         yaxis=dict(tickformat="d", title="Count"),
         bargap=0.2,
         height=600,
-        margin=dict(t=100),
+        margin=dict(t=140),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
     )
     return fig.to_json()
@@ -480,14 +593,18 @@ async def get_user_visits_pareto_figure(segment: str, days: Optional[int] = None
     total = df_visits["day_visits"].sum()
     df_visits["cumulative_pct"] = df_visits["day_visits"].cumsum() / total * 100
 
-    if days == 1:
+    if days is None:
+        period_label = "All Time"
+    elif days == 1:
         period_label = "Last Day"
     elif days == 7:
         period_label = "Last Week"
     elif days == 30:
         period_label = "Last Month"
+    elif days % 7 == 0:
+        period_label = f"Last {days // 7} Weeks"
     else:
-        period_label = "All Time"
+        period_label = f"Last {days} Days"
 
     fig = go.Figure()
 

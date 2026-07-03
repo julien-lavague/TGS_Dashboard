@@ -3,10 +3,14 @@
     "allow": [
       "Bash(mkdir -p \"c:/Users/julie/Documents/DEV/tgs-dashboard/.claude/commands\")",
       "PowerShell(& \"C:\\\\Users\\\\julie\\\\Documents\\\\DEV\\\\tgs-dashboard\\\\.venv\\\\Scripts\\\\pip.exe\" show uvicorn 2>&1)",
-      "PowerShell(& curl.exe -s -w \"`n%{http_code}\" \"http://localhost:8000/api/overview/user-growth?segment=release\" 2>&1)",
-      "PowerShell(& curl.exe -s -w \"`n%{http_code}\" \"http://localhost:8000/api/alerts/schedule\" 2>&1)",
       "mcp__claude_ai_Supabase__get_publishable_keys",
-      "mcp__claude_ai_Supabase__list_tables"
+      "mcp__claude_ai_Supabase__list_tables",
+      "Bash(tail:*)",
+      "Read(//c/Users/julie/Documents/DEV/TheGoodSpots_WA/**)",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c | ForEach-Object { $p = Get-Process -Id $_.OwningProcess; \"PID $\\($p.Id\\) $\\($p.ProcessName\\) started $\\($p.StartTime\\)\" } } else { \"nothing on 8000\" })",
+      "PowerShell(Get-Process python,uvicorn -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='python.exe' OR Name='uvicorn.exe'\" | Select-Object ProcessId,ParentProcessId,@{n='Cmd';e={$_.CommandLine}} | Format-List)"
     ],
     "additionalDirectories": [
       "c:\\Users\\julie\\Documents\\DEV\\tgs-dashboard\\.claude"

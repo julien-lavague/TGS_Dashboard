@@ -7,13 +7,14 @@ import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SegmentSelector, type Segment } from "@/components/ui/SegmentSelector";
 import { TabBar } from "@/components/ui/TabBar";
-import type { EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentCharStat } from "@/lib/types";
+import type { EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentCharStat, EquipmentQuantityResponse, EquipmentQuantityStat } from "@/lib/types";
 
 const TABS = [
   { id: "coverage", label: "Coverage" },
   { id: "by-type", label: "By Category" },
   { id: "names", label: "Equipment Names" },
   { id: "characteristics", label: "Characteristics" },
+  { id: "per-user", label: "Quantity Stats" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -28,7 +29,6 @@ const TYPE_LABELS: Record<string, string> = {
 export default function EquipmentsPage() {
   const [segment, setSegment] = useState<Segment>("all");
   const [activeTab, setActiveTab] = useState<TabId>("coverage");
-
   const coverage = useQuery({
     queryKey: ["equipment-coverage", segment],
     queryFn: () => api.equipments.getCoverage(segment),
@@ -51,6 +51,12 @@ export default function EquipmentsPage() {
     queryKey: ["equipment-characteristics", segment],
     queryFn: () => api.equipments.getCharacteristics(segment),
     enabled: activeTab === "characteristics",
+  });
+
+  const quantityStats = useQuery({
+    queryKey: ["equipment-quantity-stats", segment],
+    queryFn: () => api.equipments.getQuantityStats(segment),
+    enabled: activeTab === "per-user",
   });
 
   return (
@@ -102,6 +108,14 @@ export default function EquipmentsPage() {
           data={characteristics.data}
           isLoading={characteristics.isLoading}
           isError={characteristics.isError}
+        />
+      )}
+
+      {activeTab === "per-user" && (
+        <QuantityStatsTab
+          data={quantityStats.data}
+          isLoading={quantityStats.isLoading}
+          isError={quantityStats.isError}
         />
       )}
     </div>
@@ -259,6 +273,86 @@ function EquipmentNamesList({
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function QuantityStatsTab({
+  data,
+  isLoading,
+  isError,
+}: {
+  data?: EquipmentQuantityResponse;
+  isLoading: boolean;
+  isError: boolean;
+}) {
+  if (isLoading) return <Placeholder text="Loading…" />;
+  if (isError) return <Placeholder text="Failed to load — is the backend running?" error />;
+  if (!data) return null;
+
+  const sports = [...new Set(data.stats.map((s) => s.sport))].sort();
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Equipment quantity per user — by sport & level</CardTitle>
+        </CardHeader>
+        <CardContent className="h-[450px]">
+          <PlotlyChart figure={data.figure} className="h-full" />
+        </CardContent>
+      </Card>
+
+      {sports.map((sport) => {
+        const sportStats = data.stats.filter((s) => s.sport === sport);
+        return (
+          <Card key={sport}>
+            <CardHeader>
+              <CardTitle className="text-base">{sport}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <QuantityStatsTable stats={sportStats} />
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+function QuantityStatsTable({ stats }: { stats: EquipmentQuantityStat[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left pb-2 pr-4 font-medium text-muted-foreground">Level</th>
+            <th className="text-left pb-2 pr-4 font-medium text-muted-foreground">Type</th>
+            <th className="text-right pb-2 pr-4 font-medium text-muted-foreground">Users</th>
+            <th className="text-right pb-2 pr-4 font-medium text-muted-foreground">Min</th>
+            <th className="text-right pb-2 pr-4 font-medium text-muted-foreground">Max</th>
+            <th className="text-right pb-2 pr-4 font-medium text-muted-foreground">Mean</th>
+            <th className="text-right pb-2 font-medium text-muted-foreground">Median</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stats.map((s, i) => (
+            <tr key={i} className="border-b last:border-0 hover:bg-muted/40">
+              <td className="py-1.5 pr-4">
+                <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {s.level}
+                </span>
+              </td>
+              <td className="py-1.5 pr-4">{TYPE_LABELS[s.type] ?? s.type}</td>
+              <td className="py-1.5 pr-4 text-right text-muted-foreground">{s.user_count}</td>
+              <td className="py-1.5 pr-4 text-right">{s.min}</td>
+              <td className="py-1.5 pr-4 text-right">{s.max}</td>
+              <td className="py-1.5 pr-4 text-right">{s.mean}</td>
+              <td className="py-1.5 text-right">{s.median}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
