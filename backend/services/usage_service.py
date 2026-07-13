@@ -11,11 +11,57 @@ from core.user_segments import filter_users
 
 DEV_ORIGIN = "https://dev.thegoodspots.fr/"
 
+# X-axis config for daily bar charts: one tick per day, weekday name above the
+# date, and vertical gridlines so each bar clearly maps to its day.
+DAILY_XAXIS = dict(
+    tickformat="%a<br>%Y-%m-%d",
+    tickangle=0,
+    dtick="D1",
+    ticklabelmode="period",
+    showgrid=True,
+    gridcolor="rgba(0,0,0,0.12)",
+    ticks="outside",
+)
+
 
 def _filter_dev_urls(df: pd.DataFrame) -> pd.DataFrame:
     if "page_url" not in df.columns:
         return df
     return df[~df["page_url"].str.startswith(DEV_ORIGIN, na=False)]
+
+
+def _rolling_window_days(days: Optional[int]) -> int:
+    """Rolling window adapts to the displayed range: ~a month of smoothing for
+    long/All-time views, ~a week for shorter ranges."""
+    return 30 if (days is None or days > 30) else 7
+
+
+def _rolling_by_type(
+    df_sub: pd.DataFrame, page_types: list, window_days: int
+) -> dict:
+    """Trailing rolling-average of daily counts per page_type.
+
+    Days with no rows are treated as 0 (a genuine no-views day) so the average
+    isn't inflated by only counting active days. Returns {page_type: (xs, ys)}
+    aligned to a continuous daily date range.
+    """
+    if df_sub.empty:
+        return {pt: ([], []) for pt in page_types}
+    daily = (
+        df_sub.groupby(["entry_date", "page_type"])["count"].sum().reset_index()
+    )
+    pivot = (
+        daily.pivot(index="entry_date", columns="page_type", values="count")
+        .sort_index()
+    )
+    full_idx = pd.date_range(pivot.index.min(), pivot.index.max(), freq="D")
+    pivot = pivot.reindex(full_idx).fillna(0)
+    rolled = pivot.rolling(window=window_days, min_periods=1).mean().round(2)
+    xs = rolled.index.tolist()
+    return {
+        pt: (xs, rolled[pt].tolist()) if pt in rolled.columns else ([], [])
+        for pt in page_types
+    }
 
 
 def _apply_days_filter(df: pd.DataFrame, days: Optional[int]) -> pd.DataFrame:
@@ -63,33 +109,51 @@ async def get_page_views_figure(segment: str, days: Optional[int] = None) -> str
         barmode="stack",
     )
 
-    buttons = [dict(
-        label="All Users", method="update",
-        args=[
-            {"x": [t.x for t in fig.data], "y": [t.y for t in fig.data], "visible": [True] * len(fig.data)},
-            {"title": "Page Views by Type Over Time (All Users)"},
-        ],
-    )]
+    # Page-type order + colors, captured before the rolling lines are appended.
+    page_types = [t.name for t in fig.data]
+    color_map = {t.name: t.marker.color for t in fig.data}
+
+    window = _rolling_window_days(days)
+    window_label = "30-day" if window == 30 else "7-day"
+
+    # One trailing rolling-average line per page type, matching its bar colour.
+    all_roll = _rolling_by_type(df_timeline, page_types, window)
+    for pt in page_types:
+        xs, ys = all_roll[pt]
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, name=f"{pt} · {window_label} avg", mode="lines",
+            line=dict(color=color_map.get(pt), width=2.5),
+            legendgroup=pt,
+            hovertemplate=f"{pt} {window_label} avg: %{{y}}<extra></extra>",
+        ))
+
+    n = len(page_types)
+
+    def _button(label, df_sub, title):
+        bar_x = [df_sub[df_sub["page_type"] == pt]["entry_date"].tolist() for pt in page_types]
+        bar_y = [df_sub[df_sub["page_type"] == pt]["count"].tolist() for pt in page_types]
+        roll = _rolling_by_type(df_sub, page_types, window)
+        line_x = [roll[pt][0] for pt in page_types]
+        line_y = [roll[pt][1] for pt in page_types]
+        return dict(
+            label=label, method="update",
+            args=[
+                {"x": bar_x + line_x, "y": bar_y + line_y, "visible": [True] * (2 * n)},
+                {"title": title},
+            ],
+        )
+
+    buttons = [_button("All Users", df_timeline, "Page Views by Type Over Time (All Users)")]
     for email in all_emails:
         df_e = df_timeline[df_timeline["email"] == email]
-        new_data = []
-        for trace in fig.data:
-            df_pt = df_e[df_e["page_type"] == trace.name]
-            new_data.append({"x": df_pt["entry_date"].tolist(), "y": df_pt["count"].tolist()})
-        buttons.append(dict(
-            label=email, method="update",
-            args=[
-                {"x": [d["x"] for d in new_data], "y": [d["y"] for d in new_data], "visible": [True] * len(fig.data)},
-                {"title": f"Page Views — {email}"},
-            ],
-        ))
+        buttons.append(_button(email, df_e, f"Page Views — {email}"))
 
     fig.update_layout(
         updatemenus=[dict(
             active=0, buttons=buttons,
             x=0.0, xanchor="left", y=1.2, yanchor="top", bgcolor="lightgray",
         )],
-        xaxis=dict(tickformat="%Y-%m-%d", tickangle=-45),
+        xaxis=DAILY_XAXIS,
         bargap=0.2,
         height=600,
         margin=dict(t=150),
@@ -136,7 +200,7 @@ async def get_sessions_figure(segment: str, days: Optional[int] = None) -> str:
             active=0, buttons=buttons,
             x=0.0, xanchor="left", y=1.2, yanchor="top", bgcolor="lightgray",
         )],
-        xaxis=dict(tickformat="%Y-%m-%d", tickangle=-45),
+        xaxis=DAILY_XAXIS,
         bargap=0.2,
         height=600,
         margin=dict(t=150),
@@ -247,7 +311,7 @@ async def get_visit_duration_figure(segment: str, days: Optional[int] = None) ->
             active=0, buttons=buttons,
             x=0.0, xanchor="left", y=1.2, yanchor="top", bgcolor="lightgray",
         )],
-        xaxis=dict(tickformat="%Y-%m-%d", tickangle=-45),
+        xaxis=DAILY_XAXIS,
         bargap=0.2,
         height=600,
         margin=dict(t=150),
@@ -264,12 +328,14 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
     df_analytics = _filter_dev_urls(df_analytics).copy()
     df_analytics = _apply_days_filter(df_analytics, days)
 
+    # Granularity by displayed range: week filters (≤3 weeks) → daily bars,
+    # month filter → weekly bars, All-time → monthly bars.
     if days is None:
-        freq, period_label, tick_fmt = "M", "Month", "%Y-%m"
-    elif days <= 7:
-        freq, period_label, tick_fmt = "D", "Day", "%Y-%m-%d"
+        freq, period_label, tick_fmt, tick_dtick = "M", "Month", "%Y-%m", "M1"
+    elif days <= 21:
+        freq, period_label, tick_fmt, tick_dtick = "D", "Day", "%a<br>%Y-%m-%d", "D1"
     else:
-        freq, period_label, tick_fmt = "W", "Week", "%Y-W%V"
+        freq, period_label, tick_fmt, tick_dtick = "W", "Week", "%Y-W%V", 7 * 86400000
 
     df_analytics["entry_dt"] = pd.to_datetime(df_analytics["entry_time"], format="mixed", utc=True)
     df_analytics["period"] = df_analytics["entry_dt"].dt.to_period(freq).dt.to_timestamp()
@@ -407,6 +473,30 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
             hovertemplate=f"Recurring visitor {str(vid)[:12]}…: %{{y}}<extra></extra>",
         ))
 
+    # Rolling-average trend lines over the aggregate series — window is a few
+    # periods wide, scaled to the display granularity (≈week for daily bars,
+    # ≈month for weekly bars). Shown only in the Gross-mass view.
+    window_periods = {"D": 7, "W": 4, "M": 3}[freq]
+    trend_label = f"{window_periods}-{period_label.lower()} avg"
+    signed_trend = (
+        df_combined["signed_in_users"].rolling(window_periods, min_periods=1).mean().round(2)
+    )
+    anon_trend = (
+        df_combined["anonymous_visits"].rolling(window_periods, min_periods=1).mean().round(2)
+    )
+    fig.add_trace(go.Scatter(
+        x=df_combined["period"], y=signed_trend,
+        name=f"Signed-in · {trend_label}", mode="lines",
+        line=dict(color="#636EFA", width=2.5, dash="dot"),
+        hovertemplate=f"Signed-in {trend_label}: %{{y}}<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=df_combined["period"], y=anon_trend,
+        name=f"Anonymous · {trend_label}", mode="lines",
+        line=dict(color="#EF553B", width=2.5, dash="dot"),
+        hovertemplate=f"Anonymous {trend_label}: %{{y}}<extra></extra>",
+    ))
+
     n_users = len(user_emails)
     n_vis = 1 + len(recurring_ids)  # one-time bucket + one bar per recurring visitor
     gross_title = f"Active Signed-in Users & Anonymous Visits per {period_label}"
@@ -420,25 +510,28 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
     f_u, t_u = [False] * n_users, [True] * n_users
     f_v, t_v = [False] * n_vis, [True] * n_vis
 
+    # Trailing [signed-in trend, anonymous trend] — only shown with the gross bars.
+    trend_on, trend_off = [True, True], [False, False]
+
     buttons = [
         dict(
             label="Gross mass", method="update",
             args=[
-                {"visible": [True, True] + f_u + f_v},
+                {"visible": [True, True] + f_u + f_v + trend_on},
                 {"title": gross_title, "barmode": "group"},
             ],
         ),
         dict(
             label="Detailed signed-in", method="update",
             args=[
-                {"visible": [False, False] + t_u + f_v},
+                {"visible": [False, False] + t_u + f_v + trend_off},
                 {"title": detail_title, "barmode": "stack"},
             ],
         ),
         dict(
             label="Detailed visitors", method="update",
             args=[
-                {"visible": [False, False] + f_u + t_v},
+                {"visible": [False, False] + f_u + t_v + trend_off},
                 {"title": visitor_title, "barmode": "stack"},
             ],
         ),
@@ -452,7 +545,15 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
             x=0.0, xanchor="left", y=1.18, yanchor="top",
             pad=dict(r=6, t=4), bgcolor="lightgray",
         )],
-        xaxis=dict(tickformat=tick_fmt, tickangle=-45),
+        xaxis=dict(
+            tickformat=tick_fmt,
+            tickangle=0 if freq == "D" else -45,
+            dtick=tick_dtick,
+            ticklabelmode="period",
+            showgrid=True,
+            gridcolor="rgba(0,0,0,0.12)",
+            ticks="outside",
+        ),
         yaxis=dict(tickformat="d", title="Count"),
         bargap=0.2,
         height=600,
