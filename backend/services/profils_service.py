@@ -1,4 +1,5 @@
 import asyncio
+import json
 import pandas as pd
 import plotly.express as px
 
@@ -7,9 +8,70 @@ from core.user_segments import filter_users
 
 LEVEL_ORDER = ["débutant", "intermédiaire", "confirmé"]
 
+# Ordered from offshore to onshore so distributions read logically on the x-axis.
+DIRECTION_ORDER = ["offshore", "side-offshore", "side", "side-onshore", "onshore"]
+
+# Numeric preference parameters stored inside user_profiles.profile_data.
+# Each parameter maps to one or more "metrics" (section, field, metric label). A
+# parameter with two metrics (e.g. min & max) is drawn as two box series on the
+# same chart; the metric label is "" for single-value parameters.
+NUMERIC_PARAMS = [
+    {"key": "wind_avg",    "label": "Vent moyen",       "unit": "kn", "by_level": True,
+     "metrics": [("wind",  "min",        "min"), ("wind",  "max",        "max")]},
+    {"key": "gusts",       "label": "Rafales",          "unit": "kn", "by_level": True,
+     "metrics": [("wind",  "gusts_min",  "min"), ("wind",  "gusts",      "max")]},
+    {"key": "wave_height", "label": "Hauteur de vague", "unit": "m",  "by_level": True,
+     "metrics": [("waves", "max_height", "")]},
+    {"key": "wave_period", "label": "Période de vague", "unit": "s",
+     "metrics": [("waves", "period_min", "min"), ("waves", "period_max", "max")]},
+    {"key": "weight",      "label": "Poids du rider",   "unit": "kg",
+     "metrics": [(None,    "weight",     "")]},
+]
+
+# Categorical direction preferences (a list per profile).
+DIRECTION_PARAMS = [
+    {"key": "wind_directions",  "section": "wind",  "label": "Orientation du vent"},
+    {"key": "waves_directions", "section": "waves", "label": "Orientation des vagues"},
+]
+
+# Toggleable profile modules — whether the user enabled wind / waves / tide.
+FEATURE_PARAMS = [
+    ("wind",  "Vent"),
+    ("waves", "Vague"),
+    ("tide",  "Marée"),
+]
+
 
 def _join_emails(series: pd.Series) -> str:
     return "<br>".join(sorted(e for e in series.dropna() if e))
+
+
+def _as_profile_dict(value):
+    """profile_data is JSONB — usually a dict, occasionally a JSON string."""
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else {}
+        except (ValueError, TypeError):
+            return {}
+    return {}
+
+
+def _extract_value(profile_data: dict, section, field):
+    node = profile_data if section is None else profile_data.get(section)
+    if not isinstance(node, dict):
+        return None
+    return node.get(field)
+
+
+def _extract_directions(profile_data: dict, section):
+    node = profile_data.get(section)
+    if not isinstance(node, dict):
+        return None
+    dirs = node.get("directions")
+    return dirs if isinstance(dirs, list) else None
 
 
 async def get_spot_distribution_figure(segment: str) -> str:
@@ -62,6 +124,70 @@ async def get_spot_distribution_figure(segment: str) -> str:
         margin=dict(l=200, r=60, t=60, b=40),
         yaxis=dict(tickfont=dict(size=12)),
         xaxis=dict(title="Number of profiles"),
+    )
+    return fig.to_json()
+
+
+async def get_spot_map_figure(segment: str) -> str:
+    """Geographic map of the spots referenced in user profiles, sized/coloured by
+    the number of profiles that list each spot as a favorite."""
+    df_profiles, df_users, df_spots = await asyncio.gather(
+        get_dataframe("user_profiles"),
+        get_dataframe("users"),
+        get_dataframe("spots"),
+    )
+
+    df_profiles = df_profiles[df_profiles["is_active"] == True]
+    df_filtered_users = filter_users(df_users, segment)
+    df_profiles = df_profiles[df_profiles["user_id"].isin(df_filtered_users["id"])]
+
+    exploded = (
+        df_profiles[["user_id", "favorite_spots"]]
+        .explode("favorite_spots")
+        .dropna(subset=["favorite_spots"])
+        .rename(columns={"favorite_spots": "spot_id"})
+    )
+    counts = exploded.groupby("spot_id").size().reset_index(name="count")
+
+    spots = df_spots[["id", "name", "lat", "lon", "lon2", "region"]].rename(columns={"id": "spot_id"})
+    m = counts.merge(spots, on="spot_id", how="left")
+
+    # lon2 is the corrected -180..180 longitude; fall back to normalising lon (0..360).
+    m["lon_final"] = pd.to_numeric(m["lon2"], errors="coerce")
+    lon = pd.to_numeric(m["lon"], errors="coerce")
+    m["lon_final"] = m["lon_final"].fillna(lon.where(lon <= 180, lon - 360))
+    m["lat"] = pd.to_numeric(m["lat"], errors="coerce")
+    m = m.dropna(subset=["lat", "lon_final"])
+    m["name"] = m["name"].fillna("Unknown")
+    m["region"] = m["region"].fillna("")
+
+    if m.empty:
+        fig = px.scatter_map(lat=[46.6], lon=[2.5], zoom=4)
+        fig.update_layout(height=600, margin=dict(l=0, r=0, t=0, b=0),
+                          map=dict(style="open-street-map", center=dict(lat=46.6, lon=2.5), zoom=4))
+        return fig.to_json()
+
+    center = dict(lat=float(m["lat"].mean()), lon=float(m["lon_final"].mean()))
+
+    fig = px.scatter_map(
+        m,
+        lat="lat",
+        lon="lon_final",
+        size="count",
+        color="count",
+        hover_name="name",
+        custom_data=["count", "region"],
+        color_continuous_scale="Turbo",
+        size_max=28,
+        labels={"count": "Profils"},
+    )
+    fig.update_traces(
+        hovertemplate="<b>%{hovertext}</b><br>%{customdata[0]} profil(s)<br>%{customdata[1]}<extra></extra>",
+    )
+    fig.update_layout(
+        height=600,
+        margin=dict(l=0, r=0, t=0, b=0),
+        map=dict(style="open-street-map", center=center, zoom=4.3),
     )
     return fig.to_json()
 
@@ -196,3 +322,359 @@ async def get_level_by_sport_figure(segment: str) -> str:
         legend=dict(title="Level"),
     )
     return fig.to_json()
+
+
+async def get_profile_characteristics(segment: str, group_by: str = "sport") -> dict:
+    """Statistical distributions of profile preferences (wind, gusts, waves, weight,
+    orientations) broken down by sport (default) or by favorite spot.
+
+    Mirrors the equipments "characteristics" view: one box plot + stats table per numeric
+    parameter, plus grouped bar charts for the categorical orientation preferences.
+    In "sport" mode the boxes are grouped by sport and coloured by level; in "spot" mode
+    they are grouped (horizontally) by favorite spot and coloured by sport.
+    """
+    if group_by not in ("sport", "spot"):
+        group_by = "sport"
+
+    df_profiles, df_users, df_sports, df_spots = await asyncio.gather(
+        get_dataframe("user_profiles"),
+        get_dataframe("users"),
+        get_dataframe("sports"),
+        get_dataframe("spots"),
+    )
+
+    df_profiles = df_profiles[df_profiles["is_active"] == True].copy()
+    df_filtered_users = filter_users(df_users, segment)
+    df_profiles = df_profiles[df_profiles["user_id"].isin(df_filtered_users["id"])].copy()
+
+    sport_names = df_sports[["id", "display_name"]].rename(columns={"id": "sport_id", "display_name": "sport"})
+    df_profiles = df_profiles.merge(sport_names, on="sport_id", how="left")
+    df_profiles["sport"] = df_profiles["sport"].fillna("Unknown")
+    df_profiles["level"] = df_profiles["level"].fillna("inconnu")
+    df_profiles["profile_data"] = df_profiles["profile_data"].apply(_as_profile_dict)
+
+    email_map = df_filtered_users.set_index("id")["email"].to_dict()
+    df_profiles["email"] = df_profiles["user_id"].map(email_map).fillna("—")
+
+    # Level ordering: known levels first, then anything unexpected.
+    present_levels = list(df_profiles["level"].unique())
+    level_order = [l for l in LEVEL_ORDER if l in present_levels]
+    level_order += sorted(l for l in present_levels if l not in level_order)
+    sport_order = sorted(df_profiles["sport"].unique())
+
+    # Build the working frame: a `primary` (box group / x-axis) and a `secondary`
+    # (colour) dimension, according to the requested grouping.
+    if group_by == "spot":
+        spot_name_map = df_spots.set_index("id")["name"].to_dict()
+        work = df_profiles.explode("favorite_spots").dropna(subset=["favorite_spots"]).copy()
+        work["primary"] = work["favorite_spots"].map(spot_name_map).fillna("Unknown")
+        work["secondary"] = work["sport"]
+        primary_order = sorted(work["primary"].unique())
+        secondary_order = sport_order
+        primary_label, secondary_label = "Spot", "Sport"
+    else:  # sport
+        work = df_profiles
+        work["primary"] = work["sport"]
+        work["secondary"] = work["level"]
+        primary_order = sport_order
+        secondary_order = level_order
+        primary_label, secondary_label = "Sport", "Niveau"
+
+    figures: dict[str, str] = {}
+    stats: list[dict] = []
+    params_meta: list[dict] = []
+
+    # --- Numeric parameters -> box plots -------------------------------------
+    for p in NUMERIC_PARAMS:
+        metrics = p["metrics"]
+        multi = len(metrics) > 1
+        # Level breakdown only makes sense in sport mode (one facet per level).
+        by_level = bool(p.get("by_level")) and group_by == "sport"
+
+        # Melt every metric of this parameter into a single long frame so min & max
+        # can be drawn as two box series on the same chart.
+        long_frames = []
+        for section, field, mlabel in metrics:
+            vals = pd.to_numeric(
+                work["profile_data"].apply(lambda d, s=section, f=field: _extract_value(d, s, f)),
+                errors="coerce",
+            )
+            long_frames.append(pd.DataFrame({
+                "primary": work["primary"].values,
+                "secondary": work["secondary"].values,
+                "email": work["email"].values,
+                "value": vals.values,
+                "metric": (mlabel or "valeur"),
+            }))
+        long = pd.concat(long_frames, ignore_index=True).dropna(subset=["value"])
+        if long.empty:
+            continue
+
+        metric_order = [m or "valeur" for _, _, m in metrics]
+
+        # Choose colour / facet channels + how the stats table is grouped.
+        #   * range parameter (min/max)  -> colour splits min vs max
+        #   * by_level                   -> facet one panel per level
+        color_col = facet_col = facet_order = None
+        color_order = None
+        if multi and by_level:
+            color_col, color_order = "metric", metric_order
+            facet_col, facet_order = "secondary", secondary_order
+            stat_group = ["primary", "secondary", "metric"]
+            table_secondary_label = f"{secondary_label} · Mesure"
+        elif multi:
+            color_col, color_order = "metric", metric_order
+            stat_group = ["primary", "metric"]
+            table_secondary_label = "Mesure"
+        elif by_level:
+            facet_col, facet_order = "secondary", secondary_order
+            stat_group = ["primary", "secondary"]
+            table_secondary_label = secondary_label
+        else:
+            color_col, color_order = "secondary", secondary_order
+            stat_group = ["primary", "secondary"]
+            table_secondary_label = secondary_label
+
+        params_meta.append({
+            "key": p["key"], "label": p["label"], "unit": p["unit"],
+            "kind": "numeric", "table_secondary_label": table_secondary_label,
+        })
+
+        for keys, g in long.groupby(stat_group, observed=True):
+            vals = g["value"].dropna()
+            if len(vals) == 0:
+                continue
+            if len(stat_group) == 3:  # primary, secondary(level), metric
+                primary_val, secondary_val = keys[0], f"{keys[1]} · {keys[2]}"
+            else:
+                primary_val, secondary_val = keys
+            stats.append({
+                "param": p["key"],
+                "unit": p["unit"],
+                "primary": str(primary_val),
+                "secondary": str(secondary_val),
+                "count": int(len(vals)),
+                "min": round(float(vals.min()), 2),
+                "max": round(float(vals.max()), 2),
+                "mean": round(float(vals.mean()), 2),
+                "median": round(float(vals.median()), 2),
+            })
+
+        axis_label = f'{p["label"]} ({p["unit"]})'
+        color_title = "Mesure" if color_col == "metric" else secondary_label
+        labels = {"value": axis_label, "primary": primary_label}
+        if color_col:
+            labels[color_col] = color_title
+        if facet_col:
+            labels[facet_col] = secondary_label
+
+        cat_orders = {"primary": primary_order}
+        if color_col:
+            cat_orders[color_col] = color_order
+        if facet_col:
+            cat_orders[facet_col] = facet_order
+
+        box_kwargs = dict(points="all", custom_data=["email"], labels=labels, category_orders=cat_orders)
+        if color_col:
+            box_kwargs["color"] = color_col
+        if facet_col:
+            box_kwargs["facet_col"] = facet_col
+
+        if group_by == "spot":
+            fig = px.box(long, x="value", y="primary", orientation="h", **box_kwargs)
+            value_ph = "%{x}"
+            height = max(400, len(primary_order) * 34 + 140)
+        else:
+            fig = px.box(long, x="primary", y="value", **box_kwargs)
+            value_ph = "%{y}"
+            height = 420
+
+        # Show the user's email when hovering an individual point of the distribution.
+        fig.update_traces(
+            boxmean=True,
+            hovertemplate=f'<b>%{{customdata[0]}}</b><br>{p["label"]}: {value_ph} {p["unit"]}<extra></extra>',
+        )
+        if facet_col:
+            fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+        fig.update_layout(
+            height=height,
+            margin=dict(l=60, r=60, t=60 if facet_col else 40, b=60),
+            legend=dict(
+                title=(color_title if color_col else None),
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+            ),
+        )
+        figures[p["key"]] = fig.to_json()
+
+    # --- Module activation (wind / waves / tide) by sport & level ------------
+    act_frames = []
+    for section, flabel in FEATURE_PARAMS:
+        enabled = df_profiles["profile_data"].apply(
+            lambda d, s=section: bool(_extract_value(d, s, "enabled"))
+        )
+        act_frames.append(pd.DataFrame({
+            "sport": df_profiles["sport"].values,
+            "level": df_profiles["level"].values,
+            "feature": flabel,
+            "enabled": enabled.values,
+        }))
+    act = pd.concat(act_frames, ignore_index=True)
+    act_agg = (
+        act.groupby(["sport", "level", "feature"], observed=True)
+        .agg(total=("enabled", "size"), active=("enabled", "sum"))
+        .reset_index()
+    )
+    if not act_agg.empty:
+        act_agg["pct"] = (act_agg["active"] / act_agg["total"] * 100).round(1)
+        params_meta.append({
+            "key": "feature_activation",
+            "label": "Activation des modules (vent / vague / marée)",
+            "unit": "", "kind": "activation",
+        })
+        fig = px.bar(
+            act_agg, x="sport", y="pct", color="feature", barmode="group", facet_col="level",
+            text="active",
+            labels={"sport": "Sport", "pct": "% de profils activés", "feature": "Module", "level": "Niveau"},
+            category_orders={
+                "sport": sport_order,
+                "level": level_order,
+                "feature": [f for _, f in FEATURE_PARAMS],
+            },
+            custom_data=["active", "total", "level"],
+        )
+        fig.update_traces(
+            textposition="outside",
+            hovertemplate="<b>%{fullData.name}</b> · %{x}<br>Activé: %{customdata[0]}/%{customdata[1]} (%{y}%)<extra></extra>",
+        )
+        fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+        fig.update_layout(
+            height=440,
+            margin=dict(l=60, r=60, t=60, b=60),
+            yaxis=dict(range=[0, 105], title="% activés"),
+            legend=dict(title="Module", orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        )
+        figures["feature_activation"] = fig.to_json()
+
+    # --- Categorical orientations -> grouped bar charts by sport -------------
+    for p in DIRECTION_PARAMS:
+        dir_df = df_profiles[["sport"]].copy()
+        dir_df["dir"] = df_profiles["profile_data"].apply(lambda d, p=p: _extract_directions(d, p["section"]))
+        exploded = dir_df.explode("dir").dropna(subset=["dir"])
+        if exploded.empty:
+            continue
+
+        params_meta.append({"key": p["key"], "label": p["label"], "unit": "", "kind": "categorical"})
+
+        counts = exploded.groupby(["dir", "sport"], observed=True).size().reset_index(name="count")
+        present_dirs = [d for d in DIRECTION_ORDER if d in set(counts["dir"])]
+        present_dirs += sorted(d for d in set(counts["dir"]) if d not in DIRECTION_ORDER)
+
+        fig = px.bar(
+            counts, x="dir", y="count", color="sport", barmode="group", text="count",
+            labels={"dir": "Orientation", "count": "Nombre de profils", "sport": "Sport"},
+            category_orders={"dir": present_dirs, "sport": sport_order},
+        )
+        fig.update_traces(textposition="outside")
+        fig.update_layout(
+            height=400,
+            margin=dict(l=60, r=60, t=40, b=60),
+            legend=dict(title="Sport", orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        )
+        figures[p["key"]] = fig.to_json()
+
+    return {
+        "group_by": group_by,
+        "primary_label": primary_label,
+        "secondary_label": secondary_label,
+        "params": params_meta,
+        "figures": figures,
+        "stats": stats,
+    }
+
+
+def _sub_dict(profile_data: dict, key: str) -> dict:
+    node = profile_data.get(key)
+    return node if isinstance(node, dict) else {}
+
+
+async def get_user_profiles(segment: str) -> dict:
+    """Full per-user profile parameters for the "Fiche utilisateur" tab.
+
+    Returns one entry per user (email) with the list of their sport profiles,
+    each carrying the raw wind / waves / tide preferences, weight, favorite spot
+    names and equipment.
+    """
+    df_profiles, df_users, df_sports, df_spots = await asyncio.gather(
+        get_dataframe("user_profiles"),
+        get_dataframe("users"),
+        get_dataframe("sports"),
+        get_dataframe("spots"),
+    )
+
+    df_profiles = df_profiles[df_profiles["is_active"] == True].copy()
+    df_filtered_users = filter_users(df_users, segment)
+    df_profiles = df_profiles[df_profiles["user_id"].isin(df_filtered_users["id"])].copy()
+
+    email_map = df_filtered_users.set_index("id")["email"].to_dict()
+    sport_map = df_sports.set_index("id")["display_name"].to_dict()
+    spot_map = df_spots.set_index("id")["name"].to_dict()
+    df_profiles["profile_data"] = df_profiles["profile_data"].apply(_as_profile_dict)
+
+    users: dict[str, list] = {}
+    for _, row in df_profiles.iterrows():
+        email = email_map.get(row["user_id"], "unknown")
+        pdata = row["profile_data"]
+        wind, waves, tide = _sub_dict(pdata, "wind"), _sub_dict(pdata, "waves"), _sub_dict(pdata, "tide")
+
+        favorite_spots = row.get("favorite_spots")
+        spots = (
+            [spot_map.get(sid, "Unknown") for sid in favorite_spots if sid]
+            if isinstance(favorite_spots, list) else []
+        )
+
+        raw_equipment = pdata.get("equipment")
+        equipment = [
+            {
+                "type": e.get("type"),
+                "size": e.get("size"),
+                "enabled": bool(e.get("enabled", True)),
+            }
+            for e in raw_equipment if isinstance(e, dict)
+        ] if isinstance(raw_equipment, list) else []
+
+        profile = {
+            "sport": sport_map.get(row["sport_id"], "Unknown"),
+            "level": row.get("level") or "inconnu",
+            "weight": pdata.get("weight"),
+            "wind": {
+                "enabled": bool(wind.get("enabled", False)),
+                "min": wind.get("min"),
+                "max": wind.get("max"),
+                "gusts_min": wind.get("gusts_min"),
+                "gusts": wind.get("gusts"),
+                "directions": wind.get("directions") if isinstance(wind.get("directions"), list) else [],
+            },
+            "waves": {
+                "enabled": bool(waves.get("enabled", False)),
+                "max_height": waves.get("max_height"),
+                "period_min": waves.get("period_min"),
+                "period_max": waves.get("period_max"),
+                "directions": waves.get("directions") if isinstance(waves.get("directions"), list) else [],
+            },
+            "tide": {
+                "enabled": bool(tide.get("enabled", False)),
+                "rising": bool(tide.get("rising", False)),
+                "decreasing": bool(tide.get("decreasing", False)),
+                "low_tide_avoid": tide.get("low_tide_avoid"),
+                "high_tide_avoid": tide.get("high_tide_avoid"),
+            },
+            "spots": spots,
+            "equipment": equipment,
+        }
+        users.setdefault(email, []).append(profile)
+
+    result = [
+        {"email": email, "profiles": sorted(profiles, key=lambda p: p["sport"])}
+        for email, profiles in sorted(users.items())
+    ]
+    return {"users": result}

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse } from "./types";
+import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse } from "./types";
 
 const client = axios.create({ baseURL: "/api" });
 
@@ -41,6 +41,10 @@ export const api = {
       client
         .get<FigureResponse>("/profils/spot-distribution", { params: { segment } })
         .then((r) => r.data),
+    getSpotMap: (segment = "release") =>
+      client
+        .get<FigureResponse>("/profils/spot-map", { params: { segment } })
+        .then((r) => r.data),
     getLevelBySport: (segment = "release") =>
       client
         .get<FigureResponse>("/profils/level-by-sport", { params: { segment } })
@@ -52,6 +56,14 @@ export const api = {
     getSpotsPerProfileDetail: (segment = "release") =>
       client
         .get<SpotsPerProfileDetailResponse>("/profils/spots-per-profile-detail", { params: { segment } })
+        .then((r) => r.data),
+    getCharacteristics: (segment = "release", groupBy = "level") =>
+      client
+        .get<ProfileCharacteristicsResponse>("/profils/characteristics", { params: { segment, group_by: groupBy } })
+        .then((r) => r.data),
+    getUserProfiles: (segment = "release") =>
+      client
+        .get<UserProfilesResponse>("/profils/user-profiles", { params: { segment } })
         .then((r) => r.data),
   },
 

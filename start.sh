@@ -6,10 +6,15 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 # Activate virtualenv
 source "$ROOT/.venv/Scripts/activate"
 
-# Start backend in background
+# Start backend in background (with hot reload)
 echo "Starting backend on http://localhost:8000 ..."
 cd "$ROOT/backend"
-uvicorn main:app --reload --port 8000 &
+# Force watchfiles into polling mode: on Windows, native filesystem events are
+# often missed under OneDrive-synced / Git Bash paths, so --reload silently never
+# fires. Polling reliably picks up .py edits at the cost of a small CPU tick.
+export WATCHFILES_FORCE_POLLING=true
+export WATCHFILES_POLL_DELAY_MS=1000
+uvicorn main:app --reload --reload-dir "$ROOT/backend" --port 8000 &
 BACKEND_PID=$!
 
 # Start frontend
