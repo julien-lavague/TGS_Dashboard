@@ -65,6 +65,10 @@ export const api = {
       client
         .get<UserProfilesResponse>("/profils/user-profiles", { params: { segment } })
         .then((r) => r.data),
+    getUserSpotMap: (segment = "release", email: string) =>
+      client
+        .get<FigureResponse>("/profils/user-spot-map", { params: { segment, email } })
+        .then((r) => r.data),
   },
 
   users: {

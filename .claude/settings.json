@@ -10,7 +10,14 @@
       "PowerShell($c = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c | ForEach-Object { $p = Get-Process -Id $_.OwningProcess; \"PID $\\($p.Id\\) $\\($p.ProcessName\\) started $\\($p.StartTime\\)\" } } else { \"nothing on 8000\" })",
       "PowerShell(Get-Process python,uvicorn -ErrorAction SilentlyContinue)",
       "PowerShell(Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='python.exe' OR Name='uvicorn.exe'\" | Select-Object ProcessId,ParentProcessId,@{n='Cmd';e={$_.CommandLine}} | Format-List)"
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='python.exe' OR Name='uvicorn.exe'\" | Select-Object ProcessId,ParentProcessId,@{n='Cmd';e={$_.CommandLine}} | Format-List)",
+      "Bash(node probe3.mjs)",
+      "Bash(curl -s -u admin:m145qw \"http://localhost:8000/api/profils/user-profiles?segment=release\")",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(node probe4.mjs)",
+      "Bash(.venv/Scripts/python.exe -c \"import kaleido; print\\('kaleido', kaleido.__version__\\)\")",
+      "Bash(sed -i 's/\\\\[1280, 1024\\\\]/[1600, 1280]/' widths.mjs)",
+      "Bash(node widths.mjs)"
     ],
     "additionalDirectories": [
       "c:\\Users\\julie\\Documents\\DEV\\tgs-dashboard\\.claude"

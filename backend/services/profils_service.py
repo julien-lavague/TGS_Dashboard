@@ -1,7 +1,10 @@
 import asyncio
 import json
+import math
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from db.supabase_client import get_dataframe
 from core.user_segments import filter_users
@@ -10,6 +13,22 @@ LEVEL_ORDER = ["débutant", "intermédiaire", "confirmé"]
 
 # Ordered from offshore to onshore so distributions read logically on the x-axis.
 DIRECTION_ORDER = ["offshore", "side-offshore", "side", "side-onshore", "onshore"]
+
+# Compass layout for the orientation radar: offshore at the top (0°), onshore at
+# the bottom (180°), the three side orientations mirrored left and right so the
+# rose reads like an actual wind window. Each direction is plotted at every angle
+# listed here, hence the symmetric shape.
+DIRECTION_ANGLES = {
+    "offshore":      [0],
+    "side-offshore": [45, -45],
+    "side":          [90, -90],
+    "side-onshore":  [135, -135],
+    "onshore":       [180],
+}
+DIRECTION_SHORT = {
+    "side-offshore": "side-off",
+    "side-onshore":  "side-on",
+}
 
 # Numeric preference parameters stored inside user_profiles.profile_data.
 # Each parameter maps to one or more "metrics" (section, field, metric label). A
@@ -28,9 +47,10 @@ NUMERIC_PARAMS = [
      "metrics": [(None,    "weight",     "")]},
 ]
 
-# Categorical direction preferences (a list per profile).
+# Categorical direction preferences (a list per profile). `radar` swaps the grouped
+# bar chart for one polar chart per sport with a line per level.
 DIRECTION_PARAMS = [
-    {"key": "wind_directions",  "section": "wind",  "label": "Orientation du vent"},
+    {"key": "wind_directions",  "section": "wind",  "label": "Orientation du vent", "radar": True},
     {"key": "waves_directions", "section": "waves", "label": "Orientation des vagues"},
 ]
 
@@ -192,6 +212,90 @@ async def get_spot_map_figure(segment: str) -> str:
     return fig.to_json()
 
 
+def _zoom_for_span(span_deg: float) -> float:
+    """Rough MapLibre zoom level to fit a lat/lon span (in degrees)."""
+    for limit, zoom in [(0.1, 11), (0.3, 10), (0.6, 9), (1.2, 8), (2.5, 7), (5, 6), (10, 5)]:
+        if span_deg <= limit:
+            return zoom
+    return 4
+
+
+def _resolve_lonlat(df: pd.DataFrame) -> pd.DataFrame:
+    """Add clean numeric `lat` / `lon_final` columns from spots lat/lon/lon2."""
+    df = df.copy()
+    df["lon_final"] = pd.to_numeric(df["lon2"], errors="coerce")
+    lon = pd.to_numeric(df["lon"], errors="coerce")
+    df["lon_final"] = df["lon_final"].fillna(lon.where(lon <= 180, lon - 360))
+    df["lat"] = pd.to_numeric(df["lat"], errors="coerce")
+    return df.dropna(subset=["lat", "lon_final"])
+
+
+async def get_user_spot_map_figure(segment: str, email: str) -> str:
+    """Map of one user's favorite spots (union across their sport profiles) with a
+    barycenter marker approximating where the rider is based."""
+    df_profiles, df_users, df_spots = await asyncio.gather(
+        get_dataframe("user_profiles"),
+        get_dataframe("users"),
+        get_dataframe("spots"),
+    )
+
+    df_profiles = df_profiles[df_profiles["is_active"] == True]
+    df_filtered_users = filter_users(df_users, segment)
+    user_ids = df_filtered_users[df_filtered_users["email"] == email]["id"].tolist()
+    prof = df_profiles[df_profiles["user_id"].isin(user_ids)]
+
+    spot_ids = set()
+    for fs in prof["favorite_spots"]:
+        if isinstance(fs, list):
+            spot_ids.update(s for s in fs if s)
+
+    spots = df_spots[df_spots["id"].isin(spot_ids)][["id", "name", "lat", "lon", "lon2", "region"]]
+    spots = _resolve_lonlat(spots)
+    spots = spots.assign(name=spots["name"].fillna("Unknown"), region=spots["region"].fillna(""))
+
+    if spots.empty:
+        fig = px.scatter_map(lat=[46.6], lon=[2.5], zoom=4)
+        fig.update_layout(height=520, margin=dict(l=0, r=0, t=0, b=0),
+                          map=dict(style="open-street-map", center=dict(lat=46.6, lon=2.5), zoom=4))
+        return fig.to_json()
+
+    bary_lat = float(spots["lat"].mean())
+    bary_lon = float(spots["lon_final"].mean())
+    span = max(
+        float(spots["lat"].max() - spots["lat"].min()),
+        float(spots["lon_final"].max() - spots["lon_final"].min()),
+        0.02,
+    )
+
+    fig = px.scatter_map(
+        spots, lat="lat", lon="lon_final", hover_name="name", custom_data=["region"],
+    )
+    fig.update_traces(
+        name="Spots favoris",
+        showlegend=True,
+        marker=dict(size=12, color="#2563eb"),
+        hovertemplate="<b>%{hovertext}</b><br>%{customdata[0]}<extra></extra>",
+    )
+    fig.add_trace(go.Scattermap(
+        lat=[bary_lat], lon=[bary_lon],
+        mode="markers+text",
+        marker=dict(size=18, color="#dc2626"),
+        text=["Localisation présumée"],
+        textposition="top center",
+        textfont=dict(size=13, color="#dc2626"),
+        name="Barycentre",
+        hovertemplate="Localisation présumée<br>%{lat:.3f}, %{lon:.3f}<extra></extra>",
+    ))
+    fig.update_layout(
+        height=520,
+        margin=dict(l=0, r=0, t=0, b=0),
+        map=dict(style="open-street-map", center=dict(lat=bary_lat, lon=bary_lon), zoom=_zoom_for_span(span)),
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01,
+                    bgcolor="rgba(255,255,255,0.8)"),
+    )
+    return fig.to_json()
+
+
 async def get_spots_per_profile_figure(segment: str) -> str:
     df_profiles, df_users = await asyncio.gather(
         get_dataframe("user_profiles"),
@@ -322,6 +426,106 @@ async def get_level_by_sport_figure(segment: str) -> str:
         legend=dict(title="Level"),
     )
     return fig.to_json()
+
+
+def _rgba(hex_color: str, alpha: float) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},{alpha})"
+
+
+def _direction_radar_figure(known, exploded, dirs, sport_order, level_order, label) -> tuple[str, int]:
+    """One polar chart per sport, one line per level.
+
+    r = share of that sport+level's profiles (among those that recorded an
+    orientation list) having ticked each direction. Returns (figure json, height).
+    """
+    denom = known.groupby(["sport", "level"], observed=True).size().to_dict()
+    num = exploded.groupby(["sport", "level", "dir"], observed=True).size().to_dict()
+
+    sports = [s for s in sport_order if any(denom.get((s, l), 0) for l in level_order)]
+    ncols = min(3, len(sports))
+    nrows = math.ceil(len(sports) / ncols)
+    titles = [f"{s}  (n={sum(denom.get((s, l), 0) for l in level_order)})" for s in sports]
+
+    fig = make_subplots(
+        rows=nrows, cols=ncols,
+        specs=[[{"type": "polar"}] * ncols for _ in range(nrows)],
+        subplot_titles=titles,
+        horizontal_spacing=0.08,
+        vertical_spacing=0.12,
+    )
+
+    palette = px.colors.qualitative.Plotly
+    color_of = {lvl: palette[i % len(palette)] for i, lvl in enumerate(level_order)}
+
+    # Ring positions, sorted clockwise from the top (offshore 0° → onshore 180°).
+    ring = sorted((a % 360, d) for d, angles in DIRECTION_ANGLES.items() for a in angles)
+    theta = [a for a, _ in ring] + [360]        # 360 == 0, closes the polygon
+    ring_dirs = [d for _, d in ring] + [ring[0][1]]
+
+    legend_seen: set[str] = set()
+    for i, sport in enumerate(sports):
+        row, col = divmod(i, ncols)
+        for lvl in level_order:
+            total = denom.get((sport, lvl), 0)
+            if not total:
+                continue
+            counts = [num.get((sport, lvl, d), 0) for d in ring_dirs]
+            pct = [round(c / total * 100, 1) for c in counts]
+            color = color_of[lvl]
+            fig.add_trace(
+                go.Scatterpolar(
+                    r=pct,
+                    theta=theta,
+                    thetaunit="degrees",
+                    mode="lines+markers",
+                    name=lvl,
+                    legendgroup=lvl,
+                    showlegend=lvl not in legend_seen,
+                    line=dict(color=color, width=2),
+                    marker=dict(size=6, color=color),
+                    fill="toself",
+                    fillcolor=_rgba(color, 0.10),
+                    customdata=[[sport, lvl, c, total, d] for c, d in zip(counts, ring_dirs)],
+                    hovertemplate=(
+                        "<b>%{customdata[0]}</b> · %{customdata[1]}<br>"
+                        "%{customdata[4]} : %{r}%<br>"
+                        "%{customdata[2]}/%{customdata[3]} profils<extra></extra>"
+                    ),
+                ),
+                row=row + 1, col=col + 1,
+            )
+            legend_seen.add(lvl)
+
+    fig.update_polars(
+        radialaxis=dict(range=[0, 100], ticksuffix=" %", tickfont=dict(size=9), angle=90, dtick=25),
+        angularaxis=dict(
+            type="linear", period=360, direction="clockwise", rotation=90,
+            tickmode="array",
+            tickvals=[a for a, _ in ring],
+            ticktext=[DIRECTION_SHORT.get(d, d) for _, d in ring],
+            tickfont=dict(size=10),
+        ),
+        bgcolor="rgba(0,0,0,0)",
+    )
+    for a in fig.layout.annotations:
+        a.font.size = 13
+
+    # Anything outside the canonical compass can't be placed on the rose — say so.
+    unplaced = [d for d in dirs if d not in DIRECTION_ANGLES]
+    subtitle = f"{label} — % de profils ayant coché chaque orientation (rose symétrique gauche/droite)"
+    if unplaced:
+        subtitle += f" — hors rose : {', '.join(unplaced)}"
+
+    height = nrows * 330 + 90
+    fig.update_layout(
+        height=height,
+        margin=dict(l=50, r=50, t=80, b=40),
+        legend=dict(title="Niveau", orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=1),
+        title=dict(text=subtitle, x=0, xanchor="left", font=dict(size=12), y=0.99, yanchor="top"),
+    )
+    return fig.to_json(), height
 
 
 async def get_profile_characteristics(segment: str, group_by: str = "sport") -> dict:
@@ -557,17 +761,31 @@ async def get_profile_characteristics(segment: str, group_by: str = "sport") -> 
 
     # --- Categorical orientations -> grouped bar charts by sport -------------
     for p in DIRECTION_PARAMS:
-        dir_df = df_profiles[["sport"]].copy()
+        dir_df = df_profiles[["sport", "level"]].copy()
         dir_df["dir"] = df_profiles["profile_data"].apply(lambda d, p=p: _extract_directions(d, p["section"]))
-        exploded = dir_df.explode("dir").dropna(subset=["dir"])
+        # Profiles that recorded an orientation list at all — the radar denominator.
+        known = dir_df[dir_df["dir"].notna()]
+        exploded = known.explode("dir").dropna(subset=["dir"])
         if exploded.empty:
+            continue
+
+        present_dirs = [d for d in DIRECTION_ORDER if d in set(exploded["dir"])]
+        present_dirs += sorted(d for d in set(exploded["dir"]) if d not in DIRECTION_ORDER)
+
+        if p.get("radar"):
+            fig_json, height = _direction_radar_figure(
+                known, exploded, present_dirs, sport_order, level_order, p["label"]
+            )
+            params_meta.append({
+                "key": p["key"], "label": p["label"], "unit": "",
+                "kind": "radar", "height": height,
+            })
+            figures[p["key"]] = fig_json
             continue
 
         params_meta.append({"key": p["key"], "label": p["label"], "unit": "", "kind": "categorical"})
 
         counts = exploded.groupby(["dir", "sport"], observed=True).size().reset_index(name="count")
-        present_dirs = [d for d in DIRECTION_ORDER if d in set(counts["dir"])]
-        present_dirs += sorted(d for d in set(counts["dir"]) if d not in DIRECTION_ORDER)
 
         fig = px.bar(
             counts, x="dir", y="count", color="sport", barmode="group", text="count",

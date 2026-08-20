@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from schemas.usage import FigureResponse
-from services.profils_service import get_spot_distribution_figure, get_level_by_sport_figure, get_spots_per_profile_figure, get_spots_per_profile_detail, get_profile_characteristics, get_user_profiles, get_spot_map_figure
+from services.profils_service import get_spot_distribution_figure, get_level_by_sport_figure, get_spots_per_profile_figure, get_spots_per_profile_detail, get_profile_characteristics, get_user_profiles, get_spot_map_figure, get_user_spot_map_figure
 
 router = APIRouter(prefix="/api/profils", tags=["profils"])
 
@@ -38,3 +38,8 @@ async def profile_characteristics(segment: str = Query("release"), group_by: str
 @router.get("/user-profiles")
 async def user_profiles(segment: str = Query("release")):
     return await get_user_profiles(segment)
+
+
+@router.get("/user-spot-map", response_model=FigureResponse)
+async def user_spot_map(segment: str = Query("release"), email: str = Query(...)):
+    return FigureResponse(figure=await get_user_spot_map_figure(segment, email))

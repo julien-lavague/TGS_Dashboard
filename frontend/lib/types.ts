@@ -45,8 +45,10 @@ export interface ProfileCharParam {
   key: string;
   label: string;
   unit: string;
-  kind: "numeric" | "categorical" | "activation";
+  kind: "numeric" | "categorical" | "activation" | "radar";
   table_secondary_label?: string;
+  /** Backend-computed chart height (used when the figure needs more room, e.g. radar grids). */
+  height?: number;
 }
 
 export interface ProfileCharStat {

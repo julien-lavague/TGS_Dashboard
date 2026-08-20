@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, type ReactNode } from "react";
+import { useState, useMemo, useEffect, useCallback, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
@@ -189,6 +189,7 @@ export default function ProfilsPage() {
           data={userProfiles.data}
           isLoading={userProfiles.isLoading}
           isError={userProfiles.isError}
+          segment={segment}
         />
       )}
     </div>
@@ -199,17 +200,61 @@ function UserDetailTab({
   data,
   isLoading,
   isError,
+  segment,
 }: {
   data?: UserProfilesResponse;
   isLoading: boolean;
   isError: boolean;
+  segment: Segment;
 }) {
   const [email, setEmail] = useState<string>("");
 
-  const selected = useMemo(
-    () => data?.users.find((u) => u.email === email),
-    [data, email]
+  const users = useMemo(() => data?.users ?? [], [data]);
+  const index = useMemo(() => users.findIndex((u) => u.email === email), [users, email]);
+
+  const selected = index >= 0 ? users[index] : undefined;
+
+  const totalSpots = useMemo(
+    () => (selected ? new Set(selected.profiles.flatMap((p) => p.spots)).size : 0),
+    [selected]
   );
+
+  const userMap = useQuery({
+    queryKey: ["user-spot-map", segment, email],
+    queryFn: () => api.profils.getUserSpotMap(segment, email),
+    enabled: !!email && totalSpots > 0,
+  });
+
+  // Step through the user list; with nothing selected yet, enter it from either end.
+  const step = useCallback(
+    (delta: number) => {
+      if (!users.length) return;
+      const next = index < 0 ? (delta > 0 ? 0 : users.length - 1) : index + delta;
+      if (next < 0 || next >= users.length) return;
+      setEmail(users[next].email);
+    },
+    [users, index]
+  );
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      // Leave form controls — the user <select> above included — their native arrow keys.
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable ||
+          ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName))
+      ) {
+        return;
+      }
+      e.preventDefault();
+      step(e.key === "ArrowRight" ? 1 : -1);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [step]);
 
   if (isLoading) return <Placeholder text="Loading…" />;
   if (isError) return <Placeholder text="Failed to load — is the backend running?" error />;
@@ -222,18 +267,46 @@ function UserDetailTab({
           <CardTitle>Sélectionner un utilisateur</CardTitle>
         </CardHeader>
         <CardContent>
-          <select
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full max-w-md rounded-md border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">— Choisir un utilisateur ({data.users.length}) —</option>
-            {data.users.map((u) => (
-              <option key={u.email} value={u.email}>
-                {u.email} ({u.profiles.length} profil{u.profiles.length > 1 ? "s" : ""})
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full max-w-md rounded-md border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">— Choisir un utilisateur ({users.length}) —</option>
+              {users.map((u) => (
+                <option key={u.email} value={u.email}>
+                  {u.email} ({u.profiles.length} profil{u.profiles.length > 1 ? "s" : ""})
+                </option>
+              ))}
+            </select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={index <= 0}
+              onClick={() => step(-1)}
+              aria-label="Utilisateur précédent"
+            >
+              ‹
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!users.length || index >= users.length - 1}
+              onClick={() => step(1)}
+              aria-label="Utilisateur suivant"
+            >
+              ›
+            </Button>
+
+            <span className="text-xs text-muted-foreground">
+              {index >= 0 ? `${index + 1} / ${users.length}` : `${users.length} utilisateurs`}
+              {" · "}
+              <kbd className="rounded border px-1 py-0.5 font-mono text-[10px]">←</kbd>{" "}
+              <kbd className="rounded border px-1 py-0.5 font-mono text-[10px]">→</kbd> pour naviguer
+            </span>
+          </div>
         </CardContent>
       </Card>
 
@@ -241,10 +314,40 @@ function UserDetailTab({
         <Placeholder text="Choisissez un utilisateur pour afficher ses profils." />
       )}
 
-      {selected &&
-        selected.profiles.map((profile, i) => (
-          <UserProfileCard key={`${profile.sport}-${i}`} profile={profile} />
-        ))}
+      {selected && (
+        // Map and profiles side by side; the map sticks so it stays in view while
+        // scrolling a user with several profiles.
+        <div className="grid items-start gap-6 lg:grid-cols-5">
+          <Card className="lg:sticky lg:top-4 lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base">
+                Carte des spots ({totalSpots})
+                <span className="block text-xs font-normal text-muted-foreground">
+                  barycentre = localisation présumée
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[520px] p-0 overflow-hidden rounded-b-lg">
+              {totalSpots === 0 && (
+                <Placeholder text="Cet utilisateur n'a aucun spot favori géolocalisé." />
+              )}
+              {totalSpots > 0 && userMap.isLoading && <Placeholder text="Loading…" />}
+              {totalSpots > 0 && userMap.isError && (
+                <Placeholder text="Failed to load — is the backend running?" error />
+              )}
+              {totalSpots > 0 && userMap.data && (
+                <PlotlyChart figure={userMap.data.figure} className="h-full" />
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6 lg:col-span-3">
+            {selected.profiles.map((profile, i) => (
+              <UserProfileCard key={`${profile.sport}-${i}`} profile={profile} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -264,17 +367,19 @@ function UserProfileCard({ profile }: { profile: UserProfile }) {
           <span className="text-sm text-muted-foreground">Poids : {profile.weight} kg</span>
         )}
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-3">
+      {/* Two columns until the viewport is wide enough that a third still leaves the
+          roses a readable diameter. */}
+      <CardContent className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         <ModulePanel title="Vent" enabled={wind.enabled}>
           <FieldRow label="Vent moyen" value={rangeText(wind.min, wind.max, "kn")} />
           <FieldRow label="Rafales" value={rangeText(wind.gusts_min, wind.gusts, "kn")} />
-          <ChipRow label="Orientations" values={wind.directions} />
+          <DirectionRose directions={wind.directions} />
         </ModulePanel>
 
         <ModulePanel title="Vagues" enabled={waves.enabled}>
           <FieldRow label="Hauteur max" value={numText(waves.max_height, "m")} />
           <FieldRow label="Période" value={rangeText(waves.period_min, waves.period_max, "s")} />
-          <ChipRow label="Orientations" values={waves.directions} />
+          <DirectionRose directions={waves.directions} />
         </ModulePanel>
 
         <ModulePanel title="Marée" enabled={tide.enabled}>
@@ -325,6 +430,109 @@ function UserProfileCard({ profile }: { profile: UserProfile }) {
   );
 }
 
+// A true rose: the shoreline runs horizontally, offshore comes from the land
+// (top, 0°) and onshore from the sea (bottom, 180°). The side orientations are
+// mirrored left and right because either side of the shore-normal is the same
+// orientation — so one direction can own two sectors. Angles are clockwise from
+// the top, matching the polar layout below. Wind and waves share this vocabulary.
+const WIND_ROSE_SECTORS: { angle: number; dir: string }[] = [
+  { angle: 0, dir: "offshore" },
+  { angle: 45, dir: "side-offshore" },
+  { angle: 90, dir: "side" },
+  { angle: 135, dir: "side-onshore" },
+  { angle: 180, dir: "onshore" },
+  { angle: 225, dir: "side-onshore" }, // -135
+  { angle: 270, dir: "side" }, //         -90
+  { angle: 315, dir: "side-offshore" }, // -45
+];
+
+const WIND_ROSE_DIRS = new Set(WIND_ROSE_SECTORS.map((s) => s.dir));
+
+// Long labels collide on a small polar plot; the hover carries the full name.
+const WIND_DIRECTION_LABEL: Record<string, string> = {
+  "side-offshore": "side-off.",
+  "side-onshore": "side-on.",
+};
+
+const RADAR_COLOR = "#636EFA"; // px.colors.qualitative.Plotly[0] — same hue as the backend figures
+
+function DirectionRose({ directions }: { directions: string[] }) {
+  // The rose has fixed geometry, so a value outside it has no sector to sit in —
+  // surface those as chips rather than dropping them silently.
+  const extras = directions.filter((d) => !WIND_ROSE_DIRS.has(d));
+
+  const figure = useMemo(() => {
+    const selected = new Set(directions);
+    const theta = WIND_ROSE_SECTORS.map((s) => s.angle);
+
+    return JSON.stringify({
+      data: [
+        {
+          // A single trace: barpolar traces stack by default, and a full-ring backdrop
+          // trace would push the retained wedges past the radial range and vanish.
+          // Retained wedges reach the rim, the others stay a faint stub — so the
+          // distinction is carried by length and hover, not by colour alone.
+          type: "barpolar",
+          r: WIND_ROSE_SECTORS.map((s) => (selected.has(s.dir) ? 1 : 0.22)),
+          theta,
+          width: WIND_ROSE_SECTORS.map(() => 41), // 45° sector, 4° of surface gap
+          marker: {
+            color: WIND_ROSE_SECTORS.map((s) =>
+              selected.has(s.dir) ? RADAR_COLOR : "rgba(128,128,128,0.18)"
+            ),
+          },
+          customdata: WIND_ROSE_SECTORS.map((s) => [
+            s.dir,
+            selected.has(s.dir) ? "retenue" : "non retenue",
+          ]),
+          hovertemplate: "<b>%{customdata[0]}</b><br>%{customdata[1]}<extra></extra>",
+          showlegend: false,
+        },
+      ],
+      layout: {
+        height: 200,
+        margin: { l: 40, r: 40, t: 14, b: 14 },
+        polar: {
+          bgcolor: "rgba(0,0,0,0)",
+          hole: 0.08,
+          // Binary data — a radial scale would only invite a reading that isn't there.
+          radialaxis: { visible: false, range: [0, 1] },
+          angularaxis: {
+            direction: "clockwise",
+            rotation: 90,
+            tickmode: "array",
+            tickvals: theta,
+            ticktext: WIND_ROSE_SECTORS.map((s) => WIND_DIRECTION_LABEL[s.dir] ?? s.dir),
+            tickfont: { size: 9 },
+            linecolor: "rgba(128,128,128,0.25)",
+            gridcolor: "rgba(128,128,128,0.15)",
+          },
+        },
+      },
+    });
+  }, [directions]);
+
+  return (
+    <div className="text-sm">
+      <span className="text-muted-foreground">Orientations</span>
+      {directions.length ? (
+        <PlotlyChart figure={figure} className="h-[200px]" />
+      ) : (
+        <p className="mt-1 text-muted-foreground">—</p>
+      )}
+      {extras.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {extras.map((d) => (
+            <span key={d} className="inline-block rounded-full bg-muted px-2 py-0.5 text-xs">
+              {d}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ModulePanel({
   title,
   enabled,
@@ -356,25 +564,6 @@ function FieldRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums">{value}</span>
-    </div>
-  );
-}
-
-function ChipRow({ label, values }: { label: string; values: string[] }) {
-  return (
-    <div className="text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <div className="mt-1 flex flex-wrap gap-1">
-        {values.length ? (
-          values.map((v) => (
-            <span key={v} className="inline-block rounded-full bg-muted px-2 py-0.5 text-xs">
-              {v}
-            </span>
-          ))
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </div>
     </div>
   );
 }
@@ -435,9 +624,10 @@ function CharacteristicsTab({
           // Give per-spot box plots room to breathe (one row of boxes per spot).
           const primaryCount = new Set(paramStats.map((s) => s.primary)).size;
           const chartHeight =
-            param.kind === "numeric" && groupBy === "spot"
+            param.height ??
+            (param.kind === "numeric" && groupBy === "spot"
               ? Math.max(400, primaryCount * 34 + 140)
-              : 420;
+              : 420);
 
           return (
             <Card key={param.key}>
