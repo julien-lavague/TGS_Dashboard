@@ -24,8 +24,8 @@ type TabId = (typeof TABS)[number]["id"];
 
 export default function UsagePage() {
   const [segment, setSegment] = useState<Segment>("release");
-  const [timeRange, setTimeRange] = useState<TimeRange>("all");
-  const [activeTab, setActiveTab] = useState<TabId>("page-views");
+  const [timeRange, setTimeRange] = useState<TimeRange>("14d");
+  const [activeTab, setActiveTab] = useState<TabId>("daily-active-users");
 
   const days = DAYS_FOR_RANGE[timeRange];
 

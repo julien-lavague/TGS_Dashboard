@@ -1,26 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p \"c:/Users/julie/Documents/DEV/tgs-dashboard/.claude/commands\")",
-      "PowerShell(& \"C:\\\\Users\\\\julie\\\\Documents\\\\DEV\\\\tgs-dashboard\\\\.venv\\\\Scripts\\\\pip.exe\" show uvicorn 2>&1)",
-      "mcp__claude_ai_Supabase__get_publishable_keys",
-      "mcp__claude_ai_Supabase__list_tables",
-      "Bash(tail:*)",
-      "Read(//c/Users/julie/Documents/DEV/TheGoodSpots_WA/**)",
-      "PowerShell($c = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c | ForEach-Object { $p = Get-Process -Id $_.OwningProcess; \"PID $\\($p.Id\\) $\\($p.ProcessName\\) started $\\($p.StartTime\\)\" } } else { \"nothing on 8000\" })",
-      "PowerShell(Get-Process python,uvicorn -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='python.exe' OR Name='uvicorn.exe'\" | Select-Object ProcessId,ParentProcessId,@{n='Cmd';e={$_.CommandLine}} | Format-List)",
-      "Bash(node probe3.mjs)",
-      "Bash(curl -s -u admin:m145qw \"http://localhost:8000/api/profils/user-profiles?segment=release\")",
-      "Bash(.venv/Scripts/python.exe -c ' *)",
-      "Bash(node probe4.mjs)",
-      "Bash(.venv/Scripts/python.exe -c \"import kaleido; print\\('kaleido', kaleido.__version__\\)\")",
-      "Bash(sed -i 's/\\\\[1280, 1024\\\\]/[1600, 1280]/' widths.mjs)",
-      "Bash(node widths.mjs)"
+      "Bash(.venv/Scripts/python.exe -c:*)",
+      "Bash(.venv/Scripts/python.exe -m:*)",
+      "Bash(../.venv/Scripts/python.exe -c:*)",
+      "Bash(../.venv/Scripts/python.exe -m:*)",
+      "Bash(python -c:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(python -m pytest:*)",
+      "PowerShell(Start-Job:*)",
+      "PowerShell(Stop-Job:*)",
+      "PowerShell(Remove-Job:*)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:*)"
     ],
-    "additionalDirectories": [
-      "c:\\Users\\julie\\Documents\\DEV\\tgs-dashboard\\.claude"
+    "ask": [
+      "Bash(git push:*)",
+      "PowerShell(git push:*)"
     ]
   }
 }

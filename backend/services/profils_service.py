@@ -30,6 +30,26 @@ DIRECTION_SHORT = {
     "side-onshore":  "side-on",
 }
 
+def _gust_ratio(profile_data: dict):
+    """Derived metric: how gusty a rider accepts their sessions to be.
+
+    Ratio of the max acceptable gust over the max acceptable average wind. 1.0 means
+    the profile tolerates no gustiness at all; higher values mean a rider happy with
+    peaks well above the average wind they target.
+    """
+    wind = profile_data.get("wind")
+    if not isinstance(wind, dict):
+        return None
+    try:
+        gusts = float(wind.get("gusts"))
+        wind_max = float(wind.get("max"))
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(gusts) or not math.isfinite(wind_max) or wind_max <= 0:
+        return None
+    return gusts / wind_max
+
+
 # Numeric preference parameters stored inside user_profiles.profile_data.
 # Each parameter maps to one or more "metrics" (section, field, metric label). A
 # parameter with two metrics (e.g. min & max) is drawn as two box series on the
@@ -39,6 +59,8 @@ NUMERIC_PARAMS = [
      "metrics": [("wind",  "min",        "min"), ("wind",  "max",        "max")]},
     {"key": "gusts",       "label": "Rafales",          "unit": "kn", "by_level": True,
      "metrics": [("wind",  "gusts_min",  "min"), ("wind",  "gusts",      "max")]},
+    {"key": "gust_ratio",  "label": "Ratio rafales max / vent moyen max", "unit": "×", "by_level": True,
+     "metrics": [(None,    _gust_ratio,  "")]},
     {"key": "wave_height", "label": "Hauteur de vague", "unit": "m",  "by_level": True,
      "metrics": [("waves", "max_height", "")]},
     {"key": "wave_period", "label": "Période de vague", "unit": "s",
@@ -80,6 +102,9 @@ def _as_profile_dict(value):
 
 
 def _extract_value(profile_data: dict, section, field):
+    # A callable field is a derived metric computed from the whole profile.
+    if callable(field):
+        return field(profile_data)
     node = profile_data if section is None else profile_data.get(section)
     if not isinstance(node, dict):
         return None
