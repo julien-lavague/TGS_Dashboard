@@ -276,7 +276,8 @@ function UserDetailTab({
               <option value="">— Choisir un utilisateur ({users.length}) —</option>
               {users.map((u) => (
                 <option key={u.email} value={u.email}>
-                  {u.email} ({u.profiles.length} profil{u.profiles.length > 1 ? "s" : ""})
+                  {shortDate(u.created_at)} — {u.email} ({u.profiles.length} profil
+                  {u.profiles.length > 1 ? "s" : ""})
                 </option>
               ))}
             </select>
@@ -302,7 +303,7 @@ function UserDetailTab({
 
             <span className="text-xs text-muted-foreground">
               {index >= 0 ? `${index + 1} / ${users.length}` : `${users.length} utilisateurs`}
-              {" · "}
+              {" · triés par date de création (plus récents d'abord) · "}
               <kbd className="rounded border px-1 py-0.5 font-mono text-[10px]">←</kbd>{" "}
               <kbd className="rounded border px-1 py-0.5 font-mono text-[10px]">→</kbd> pour naviguer
             </span>
@@ -350,6 +351,21 @@ function UserDetailTab({
       )}
     </div>
   );
+}
+
+// Fixed locale/zone so the server and client renders match — otherwise React
+// hydration warns on machines whose locale differs from the build host.
+const DATE_FMT = new Intl.DateTimeFormat("fr-FR", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "UTC",
+});
+
+function shortDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : DATE_FMT.format(d);
 }
 
 function UserProfileCard({ profile }: { profile: UserProfile }) {

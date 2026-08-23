@@ -843,9 +843,9 @@ def _sub_dict(profile_data: dict, key: str) -> dict:
 async def get_user_profiles(segment: str) -> dict:
     """Full per-user profile parameters for the "Fiche utilisateur" tab.
 
-    Returns one entry per user (email) with the list of their sport profiles,
-    each carrying the raw wind / waves / tide preferences, weight, favorite spot
-    names and equipment.
+    Returns one entry per user (email), ordered by account creation date with the
+    most recent first, with the list of their sport profiles, each carrying the raw
+    wind / waves / tide preferences, weight, favorite spot names and equipment.
     """
     df_profiles, df_users, df_sports, df_spots = await asyncio.gather(
         get_dataframe("user_profiles"),
@@ -859,11 +859,17 @@ async def get_user_profiles(segment: str) -> dict:
     df_profiles = df_profiles[df_profiles["user_id"].isin(df_filtered_users["id"])].copy()
 
     email_map = df_filtered_users.set_index("id")["email"].to_dict()
+    created_map = (
+        pd.to_datetime(df_filtered_users["created_at"], format="mixed", utc=True)
+        .set_axis(df_filtered_users["id"])
+        .to_dict()
+    )
     sport_map = df_sports.set_index("id")["display_name"].to_dict()
     spot_map = df_spots.set_index("id")["name"].to_dict()
     df_profiles["profile_data"] = df_profiles["profile_data"].apply(_as_profile_dict)
 
     users: dict[str, list] = {}
+    created_by_email: dict[str, object] = {}
     for _, row in df_profiles.iterrows():
         email = email_map.get(row["user_id"], "unknown")
         pdata = row["profile_data"]
@@ -915,9 +921,25 @@ async def get_user_profiles(segment: str) -> dict:
             "equipment": equipment,
         }
         users.setdefault(email, []).append(profile)
+        created_by_email.setdefault(email, created_map.get(row["user_id"]))
+
+    # Most recently created accounts first; users without a usable date go last,
+    # then alphabetically by email so the order stays stable between calls.
+    def _sort_key(email: str):
+        created = created_by_email.get(email)
+        missing = created is None or pd.isna(created)
+        return (missing, -(created.timestamp() if not missing else 0), email)
 
     result = [
-        {"email": email, "profiles": sorted(profiles, key=lambda p: p["sport"])}
-        for email, profiles in sorted(users.items())
+        {
+            "email": email,
+            "created_at": (
+                None
+                if created_by_email.get(email) is None or pd.isna(created_by_email[email])
+                else created_by_email[email].isoformat()
+            ),
+            "profiles": sorted(users[email], key=lambda p: p["sport"]),
+        }
+        for email in sorted(users, key=_sort_key)
     ]
     return {"users": result}

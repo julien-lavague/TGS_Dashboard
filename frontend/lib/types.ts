@@ -116,6 +116,8 @@ export interface UserProfile {
 
 export interface UserProfileRecord {
   email: string;
+  /** Account creation date, ISO 8601. Null when the source row has no usable date. */
+  created_at: string | null;
   profiles: UserProfile[];
 }
 
