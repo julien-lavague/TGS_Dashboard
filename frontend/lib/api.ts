@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse } from "./types";
+import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse, ReleaseNote, ReleaseNoteCreate, ReleaseNotesResponse } from "./types";
 
 const client = axios.create({ baseURL: "/api" });
 
@@ -141,5 +141,21 @@ export const api = {
       client
         .get<FigureResponse>("/usage/visit-frequency", { params: { segment, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
+  },
+
+  releaseNotes: {
+    list: () =>
+      client.get<ReleaseNotesResponse>("/release-notes").then((r) => r.data),
+    create: (note: ReleaseNoteCreate) =>
+      client.post<ReleaseNote>("/release-notes", note).then((r) => r.data),
+    remove: (id: string) =>
+      client.delete(`/release-notes/${id}`).then((r) => r.data),
+    uploadImage: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return client
+        .post<{ image_url: string }>("/release-notes/images", form)
+        .then((r) => r.data);
+    },
   },
 };

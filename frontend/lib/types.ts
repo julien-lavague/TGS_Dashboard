@@ -177,3 +177,35 @@ export interface EquipmentQuantityResponse {
   figure: string;
   stats: EquipmentQuantityStat[];
 }
+
+export type ReleaseNoteCategory = "major" | "minor" | "fix";
+
+export type ReleaseNoteAudience = "all" | "free" | "premium";
+
+export interface ReleaseNoteItem {
+  category: ReleaseNoteCategory;
+  title: string;
+  description?: string | null;
+  image_url?: string | null;
+}
+
+export interface ReleaseNote {
+  id: string;
+  version: string;
+  published_at: string;
+  is_important: boolean;
+  audience: ReleaseNoteAudience;
+  items: ReleaseNoteItem[];
+}
+
+export interface ReleaseNotesResponse {
+  rows: ReleaseNote[];
+}
+
+export interface ReleaseNoteCreate {
+  version: string;
+  published_at?: string;
+  is_important: boolean;
+  audience: ReleaseNoteAudience;
+  items: ReleaseNoteItem[];
+}

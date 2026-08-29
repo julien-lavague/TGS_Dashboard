@@ -11,6 +11,7 @@ const NAV = [
   { href: "/equipments", label: "Equipments" },
   { href: "/profils", label: "Profils" },
   { href: "/users", label: "Users" },
+  { href: "/release-notes", label: "Release Notes" },
 ];
 
 export function Sidebar() {
