@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from auth import require_login
-from routers import alerts, overview, usage, profils, users, equipments, system, release_notes
+from routers import alerts, overview, usage, profils, users, equipments, system, release_notes, widgets
 
 app = FastAPI(title="TGS Metrics Dashboard", version="0.1.0")
 
@@ -26,6 +26,7 @@ app.include_router(users.router, dependencies=_auth)
 app.include_router(equipments.router, dependencies=_auth)
 app.include_router(system.router, dependencies=_auth)
 app.include_router(release_notes.router, dependencies=_auth)
+app.include_router(widgets.router, dependencies=_auth)
 
 
 @app.get("/health")

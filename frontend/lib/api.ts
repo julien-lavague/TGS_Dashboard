@@ -143,6 +143,29 @@ export const api = {
         .then((r) => r.data),
   },
 
+  widgets: {
+    getElementUsage: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/widgets/element-usage", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getTimelineDepth: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/widgets/timeline-depth", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getCellClicks: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/widgets/cell-clicks", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getFilters: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/widgets/filters", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+    getPaywallFunnel: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/widgets/paywall-funnel", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
+  },
+
   releaseNotes: {
     list: () =>
       client.get<ReleaseNotesResponse>("/release-notes").then((r) => r.data),
