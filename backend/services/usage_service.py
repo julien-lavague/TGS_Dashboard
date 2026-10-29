@@ -30,6 +30,19 @@ def _filter_dev_urls(df: pd.DataFrame) -> pd.DataFrame:
     return df[~df["page_url"].str.startswith(DEV_ORIGIN, na=False)]
 
 
+def _filter_future_entries(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop visits stamped in the future.
+
+    `entry_time` is written client-side by the app (`new Date()`), so a device
+    with a wrong system clock logs a visit days or weeks ahead. A single such
+    row stretches every date axis to that phantom date.
+    """
+    if "entry_time" not in df.columns:
+        return df
+    entry_times = pd.to_datetime(df["entry_time"], format="mixed", utc=True)
+    return df[~(entry_times > pd.Timestamp.now(tz="UTC"))]
+
+
 def _rolling_window_days(days: Optional[int]) -> int:
     """Rolling window adapts to the displayed range: ~a month of smoothing for
     long/All-time views, ~a week for shorter ranges."""
@@ -79,6 +92,7 @@ async def _load_analytics_merged(segment: str, days: Optional[int] = None) -> pd
     )
     df_filtered_users = filter_users(df_users, segment)
     df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 
     df_merged = df_analytics.merge(
@@ -215,6 +229,7 @@ async def get_sessions_per_week_since_signup_figure(segment: str, days: Optional
     )
     df_filtered_users = filter_users(df_users, segment)
     df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 
     df_merged = df_analytics.merge(
@@ -325,7 +340,8 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
         get_dataframe("users"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics).copy()
+    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = _filter_future_entries(df_analytics).copy()
     df_analytics = _apply_days_filter(df_analytics, days)
 
     # Granularity by displayed range: week filters (≤3 weeks) → daily bars,
@@ -570,6 +586,7 @@ async def get_visit_frequency_figure(segment: str, days: Optional[int] = None) -
     )
     df_filtered_users = filter_users(df_users, segment)
     df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 
     df_merged = df_analytics.merge(
@@ -694,18 +711,7 @@ async def get_user_visits_pareto_figure(segment: str, days: Optional[int] = None
     total = df_visits["day_visits"].sum()
     df_visits["cumulative_pct"] = df_visits["day_visits"].cumsum() / total * 100
 
-    if days is None:
-        period_label = "All Time"
-    elif days == 1:
-        period_label = "Last Day"
-    elif days == 7:
-        period_label = "Last Week"
-    elif days == 30:
-        period_label = "Last Month"
-    elif days % 7 == 0:
-        period_label = f"Last {days // 7} Weeks"
-    else:
-        period_label = f"Last {days} Days"
+    period_label = _period_label(days)
 
     fig = go.Figure()
 
@@ -777,4 +783,271 @@ async def get_timeline_figure(segment: str, days: Optional[int] = None) -> str:
         xaxis=dict(tickformat="%Y-%m-%d %H:%M"),
     )
     fig.update_yaxes(autorange="reversed")
+    return fig.to_json()
+
+
+def _period_label(days: Optional[int]) -> str:
+    if days is None:
+        return "All Time"
+    if days == 1:
+        return "Last Day"
+    if days == 7:
+        return "Last Week"
+    if days == 30:
+        return "Last Month"
+    if days % 7 == 0:
+        return f"Last {days // 7} Weeks"
+    return f"Last {days} Days"
+
+
+def _empty_figure(message: str) -> str:
+    fig = go.Figure()
+    fig.add_annotation(
+        text=message, showarrow=False, xref="paper", yref="paper",
+        x=0.5, y=0.5, font=dict(size=14, color="gray"),
+    )
+    fig.update_layout(
+        height=400,
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+    )
+    return fig.to_json()
+
+
+def _profile_characteristics(
+    df_profiles: pd.DataFrame, df_sports: pd.DataFrame, user_ids
+) -> pd.DataFrame:
+    """Per-user profile summary: sports practised, levels, and favourite-spot count.
+
+    A user has one `user_profiles` row per sport, each with its own level and
+    favourite-spot list. The "primary" sport is the profile carrying the most
+    favourite spots (the one the user actually invested in); its level is
+    reported as the primary level. Spots are de-duplicated across profiles.
+    """
+    cols = ["user_id", "sports", "primary_sport", "levels", "primary_level",
+            "spot_count", "n_profiles"]
+    if df_profiles.empty or "is_active" not in df_profiles.columns:
+        return pd.DataFrame(columns=cols)
+
+    prof = df_profiles[df_profiles["is_active"] == True].copy()
+    prof = prof[prof["user_id"].isin(user_ids)]
+    if prof.empty:
+        return pd.DataFrame(columns=cols)
+
+    sport_map = df_sports.set_index("id")["display_name"].to_dict()
+    prof["sport"] = prof["sport_id"].map(sport_map).fillna("Unknown")
+    prof["level"] = prof["level"].fillna("inconnu")
+    prof["spot_ids"] = prof["favorite_spots"].apply(
+        lambda v: [s for s in v if s] if isinstance(v, list) else []
+    )
+    prof["n_spots"] = prof["spot_ids"].apply(len)
+
+    # Primary profile per user = most favourite spots, ties broken alphabetically
+    # by sport so the pick stays stable between refreshes.
+    primary = (
+        prof.sort_values(["n_spots", "sport"], ascending=[False, True])
+        .drop_duplicates(subset=["user_id"])
+        .set_index("user_id")
+    )
+
+    grouped = prof.groupby("user_id")
+    out = pd.DataFrame({
+        "sports": grouped["sport"].apply(lambda s: ", ".join(sorted(set(s)))),
+        "levels": grouped["level"].apply(lambda s: ", ".join(sorted(set(s)))),
+        "spot_count": grouped["spot_ids"].apply(lambda s: len({i for ids in s for i in ids})),
+        "n_profiles": grouped.size(),
+    })
+    out["primary_sport"] = primary["sport"]
+    out["primary_level"] = primary["level"]
+    return out.reset_index()[cols]
+
+
+def _vital_few_summary(df_vital: pd.DataFrame, n_users: int, total_visits: int) -> str:
+    """One-line profile of the users making up 80% of the visits."""
+    n = len(df_vital)
+    share_users = n / n_users * 100 if n_users else 0
+    share_visits = df_vital["day_visits"].sum() / total_visits * 100 if total_visits else 0
+    sports = df_vital["primary_sport"].value_counts()
+    levels = df_vital["primary_level"].value_counts()
+    top_sports = ", ".join(f"{s} ({c})" for s, c in sports.head(3).items()) or "—"
+    top_levels = ", ".join(f"{lv} ({c})" for lv, c in levels.head(3).items()) or "—"
+    return (
+        f"Vital few: {n}/{n_users} users ({share_users:.0f}%) drive {share_visits:.0f}% "
+        f"of visits — sports: {top_sports} · levels: {top_levels} · "
+        f"spots: median {df_vital['spot_count'].median():.0f}, "
+        f"mean {df_vital['spot_count'].mean():.1f}"
+    )
+
+
+async def get_visitor_profiles_pareto_figure(segment: str, days: Optional[int] = None) -> str:
+    """Pareto of visiting users, annotated with who they are.
+
+    Same ranking as the User Visits pareto (distinct days with at least one page
+    view), but each user is cross-referenced with their sport profiles so the
+    "vital few" driving usage can be characterised by sport, favourite-spot count
+    and level.
+    """
+    df_analytics, df_users, df_profiles, df_sports = await asyncio.gather(
+        get_dataframe("user_analytics"),
+        get_dataframe("users"),
+        get_dataframe("user_profiles"),
+        get_dataframe("sports"),
+    )
+    df_filtered_users = filter_users(df_users, segment)
+    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = _filter_future_entries(df_analytics)
+    df_analytics = _apply_days_filter(df_analytics, days)
+
+    period_label = _period_label(days)
+
+    df = df_analytics.merge(
+        df_filtered_users[["id", "email"]],
+        left_on="user_id", right_on="id", suffixes=("", "_user"),
+    )
+    if df.empty:
+        return _empty_figure(f"No signed-in visits over {period_label.lower()}")
+
+    df = df.copy()
+    df["entry_date"] = pd.to_datetime(df["entry_time"], format="mixed").dt.date
+
+    df_visits = (
+        df.drop_duplicates(subset=["user_id", "entry_date"])
+        .groupby(["user_id", "email"])
+        .agg(day_visits=("entry_date", "count"))
+        .reset_index()
+    )
+    sessions = df.groupby("user_id")["session_id"].nunique().rename("sessions")
+    df_visits = df_visits.merge(sessions, on="user_id", how="left")
+
+    chars = _profile_characteristics(df_profiles, df_sports, df_filtered_users["id"])
+    df_visits = df_visits.merge(chars, on="user_id", how="left")
+    # Visitors with no active sport profile still rank in the pareto — that gap is
+    # itself a finding, so they get their own "no profile" category.
+    df_visits["primary_sport"] = df_visits["primary_sport"].fillna("Aucun profil")
+    df_visits["primary_level"] = df_visits["primary_level"].fillna("—")
+    df_visits["sports"] = df_visits["sports"].fillna("—")
+    df_visits["levels"] = df_visits["levels"].fillna("—")
+    df_visits["spot_count"] = df_visits["spot_count"].fillna(0).astype(int)
+
+    df_visits = df_visits.sort_values(
+        ["day_visits", "email"], ascending=[False, True]
+    ).reset_index(drop=True)
+    total = int(df_visits["day_visits"].sum())
+    df_visits["cumulative_pct"] = df_visits["day_visits"].cumsum() / total * 100
+
+    # "Vital few" = shortest head of the ranking accounting for 80% of day visits
+    # (the user that crosses the 80% mark is included).
+    n_users = len(df_visits)
+    n_vital = min(int((df_visits["cumulative_pct"] < 80).sum()) + 1, n_users)
+    df_vital = df_visits.head(n_vital)
+
+    order = df_visits["email"].tolist()
+    sports_present = sorted(df_visits["primary_sport"].unique().tolist())
+    palette = px.colors.qualitative.Plotly
+    sport_colors = {s: palette[i % len(palette)] for i, s in enumerate(sports_present)}
+
+    table_height = 40 + n_users * 24
+    chart_height = 420
+
+    fig = make_subplots(
+        rows=2, cols=1,
+        row_heights=[chart_height, table_height],
+        vertical_spacing=0.07,
+        specs=[[{"secondary_y": True}], [{"type": "table"}]],
+        subplot_titles=(
+            f"Day Visits per User — {period_label} (bars coloured by primary sport)",
+            "Visitor characteristics",
+        ),
+    )
+
+    # One bar trace per primary sport so the sport reads straight off the chart.
+    for sport in sports_present:
+        sub = df_visits[df_visits["primary_sport"] == sport]
+        fig.add_trace(
+            go.Bar(
+                x=sub["email"], y=sub["day_visits"], name=sport,
+                marker_color=sport_colors[sport],
+                customdata=sub[["sports", "levels", "spot_count", "sessions"]].values,
+                hovertemplate=(
+                    "<b>%{x}</b><br>Day visits: %{y}<br>Sessions: %{customdata[3]}"
+                    "<br>Sport(s): %{customdata[0]}<br>Level(s): %{customdata[1]}"
+                    "<br>Spots: %{customdata[2]}<extra></extra>"
+                ),
+            ),
+            row=1, col=1, secondary_y=False,
+        )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df_visits["email"], y=df_visits["cumulative_pct"],
+            name="Cumulative %", mode="lines+markers",
+            line=dict(color="darkorange", width=2), marker=dict(size=6),
+            hovertemplate="<b>%{x}</b><br>Cumulative: %{y:.1f}%<extra></extra>",
+        ),
+        row=1, col=1, secondary_y=True,
+    )
+
+    fig.add_hline(
+        y=80, line=dict(color="darkorange", width=1, dash="dot"),
+        annotation_text="80%", annotation_position="top left",
+        row=1, col=1, secondary_y=True,
+    )
+
+    fig.add_trace(
+        go.Table(
+            columnwidth=[26, 200, 55, 55, 55, 140, 120, 45],
+            header=dict(
+                values=["#", "User", "Day<br>visits", "Sessions", "Cum %",
+                        "Sport(s)", "Level(s)", "Spots"],
+                fill_color="#636EFA", font=dict(color="white", size=11),
+                align="center", height=30,
+            ),
+            cells=dict(
+                values=[
+                    list(range(1, n_users + 1)),
+                    df_visits["email"],
+                    df_visits["day_visits"],
+                    df_visits["sessions"],
+                    df_visits["cumulative_pct"].round(1),
+                    df_visits["sports"],
+                    df_visits["levels"],
+                    df_visits["spot_count"],
+                ],
+                # Shade the vital few so the 80% head is findable in the table too.
+                fill_color=[
+                    ["#e8eaff" if i < n_vital else "white" for i in range(n_users)]
+                ] * 8,
+                align=["center", "left", "center", "center", "center", "left", "left", "center"],
+                font=dict(size=11), height=24,
+            ),
+        ),
+        row=2, col=1,
+    )
+
+    fig.update_yaxes(title_text="Day visits", row=1, col=1, secondary_y=False)
+    fig.update_yaxes(
+        title_text="Cumulative %", range=[0, 105], ticksuffix="%",
+        row=1, col=1, secondary_y=True, showgrid=False,
+    )
+    fig.update_xaxes(
+        title_text="User", tickangle=-45, categoryorder="array", categoryarray=order,
+        row=1, col=1,
+    )
+    fig.update_layout(
+        title=dict(
+            text=(
+                f"Visitor Pareto — {period_label}<br>"
+                f"<sub>{_vital_few_summary(df_vital, n_users, total)}</sub>"
+            ),
+            x=0.01, xanchor="left",
+        ),
+        barmode="stack",
+        bargap=0.2,
+        height=chart_height + table_height + 220,
+        margin=dict(t=140, b=160, l=70, r=70),
+        legend=dict(
+            title="Primary sport", orientation="h",
+            yanchor="bottom", y=1.02, xanchor="left", x=0,
+        ),
+    )
     return fig.to_json()

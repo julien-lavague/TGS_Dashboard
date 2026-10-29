@@ -141,6 +141,10 @@ export const api = {
       client
         .get<FigureResponse>("/usage/visit-frequency", { params: { segment, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
+    getVisitorProfilesPareto: (segment = "release", days?: number) =>
+      client
+        .get<FigureResponse>("/usage/visitor-profiles-pareto", { params: { segment, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
   },
 
   widgets: {

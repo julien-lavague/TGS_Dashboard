@@ -18,6 +18,19 @@ def _filter_dev_urls(df: pd.DataFrame) -> pd.DataFrame:
     return df[~df["page_url"].str.startswith(DEV_ORIGIN, na=False)]
 
 
+def _filter_future_entries(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop visits stamped in the future.
+
+    `entry_time` is written client-side by the app (`new Date()`), so a device
+    with a wrong system clock logs a visit days or weeks ahead. A single such
+    row stretches every date axis to that phantom date.
+    """
+    if "entry_time" not in df.columns:
+        return df
+    entry_times = pd.to_datetime(df["entry_time"], format="mixed", utc=True)
+    return df[~(entry_times > pd.Timestamp.now(tz="UTC"))]
+
+
 async def get_users_by_segment() -> dict[str, list[str]]:
     df = await get_dataframe("users")
     all_emails: set[str] = set(df["email"].dropna().tolist())
@@ -40,6 +53,7 @@ async def get_users_by_segment() -> dict[str, list[str]]:
 async def get_anonymous_visitor_stats() -> dict:
     df = await get_dataframe("user_analytics")
     df = _filter_dev_urls(df)
+    df = _filter_future_entries(df)
     anon = df[df["user_id"].isna()]
     session_count = int(anon["session_id"].nunique())
     page_view_count = int(len(anon))

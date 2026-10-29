@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Query
 from schemas.usage import FigureResponse
-from services.usage_service import get_page_views_figure, get_sessions_figure, get_sessions_per_week_since_signup_figure, get_timeline_figure, get_visit_duration_figure, get_daily_active_users_figure, get_user_visits_pareto_figure, get_visit_frequency_figure
+from services.usage_service import get_page_views_figure, get_sessions_figure, get_sessions_per_week_since_signup_figure, get_timeline_figure, get_visit_duration_figure, get_daily_active_users_figure, get_user_visits_pareto_figure, get_visit_frequency_figure, get_visitor_profiles_pareto_figure
 
 router = APIRouter(prefix="/api/usage", tags=["usage"])
 
@@ -44,3 +44,8 @@ async def user_visits_pareto(segment: str = Query("release"), days: Optional[int
 @router.get("/visit-frequency", response_model=FigureResponse)
 async def visit_frequency(segment: str = Query("release"), days: Optional[int] = Query(None)):
     return FigureResponse(figure=await get_visit_frequency_figure(segment, days))
+
+
+@router.get("/visitor-profiles-pareto", response_model=FigureResponse)
+async def visitor_profiles_pareto(segment: str = Query("release"), days: Optional[int] = Query(None)):
+    return FigureResponse(figure=await get_visitor_profiles_pareto_figure(segment, days))

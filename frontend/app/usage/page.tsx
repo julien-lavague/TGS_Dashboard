@@ -18,6 +18,7 @@ const TABS = [
   { id: "timeline", label: "Timeline" },
   { id: "user-visits-pareto", label: "User Visits" },
   { id: "visit-frequency", label: "Visit Frequency" },
+  { id: "visitor-profiles-pareto", label: "Visitor Profiles" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -75,6 +76,12 @@ export default function UsagePage() {
     queryKey: ["visit-frequency", segment, timeRange],
     queryFn: () => api.usage.getVisitFrequency(segment, days),
     enabled: activeTab === "visit-frequency",
+  });
+
+  const visitorProfiles = useQuery({
+    queryKey: ["visitor-profiles-pareto", segment, timeRange],
+    queryFn: () => api.usage.getVisitorProfilesPareto(segment, days),
+    enabled: activeTab === "visitor-profiles-pareto",
   });
 
   return (
@@ -188,14 +195,33 @@ export default function UsagePage() {
           </CardContent>
         </Card>
       )}
+
+      {activeTab === "visitor-profiles-pareto" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Visitor Pareto — Sport, Spots &amp; Level</CardTitle>
+          </CardHeader>
+          {/* The figure stacks a pareto and a per-user table, so its height grows
+              with the user count — scroll instead of clipping it. */}
+          <CardContent className="h-[calc(100vh-260px)] overflow-y-auto">
+            <ChartArea query={visitorProfiles} fitHeight={false} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
 
-function ChartArea({ query }: { query: ReturnType<typeof useQuery<{ figure: string }>> }) {
+function ChartArea({
+  query,
+  fitHeight = true,
+}: {
+  query: ReturnType<typeof useQuery<{ figure: string }>>;
+  fitHeight?: boolean;
+}) {
   if (query.isPending) return <Placeholder text="Loading…" />;
   if (query.isError) return <Placeholder text="Failed to load — is the backend running?" error />;
-  return <PlotlyChart figure={query.data.figure} className="h-full" />;
+  return <PlotlyChart figure={query.data.figure} className={fitHeight ? "h-full" : "w-full"} />;
 }
 
 function Placeholder({ text, error }: { text: string; error?: boolean }) {
