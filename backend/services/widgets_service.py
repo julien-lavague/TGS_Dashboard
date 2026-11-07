@@ -30,14 +30,18 @@ INTERACTION_EVENTS = {
 # touché doit apparaître à 0 % et non disparaître du graphique.
 ELEMENT_GROUPS = {
     "Timeline": [
-        "timeline_cell", "timeline_spot_label", "timeline_wind_edit",
+        "timeline_cell", "timeline_spot_label", "timeline_spot_menu", "timeline_wind_edit",
         "timeline_scrubber", "timeline_keyboard", "timeline_drag", "slot_timeline",
     ],
-    "Filtres": ["score_filter", "view_mode", "sport_switcher", "profile_edit", "satellite_toggle"],
-    "Bulles": ["bubble_spots", "bubble_community", "bubble_live", "bubble_relief3d", "menu"],
+    "Filtres": [
+        "display_metric", "score_filter", "wind_filter", "view_mode",
+        "sport_switcher", "profile_edit", "satellite_toggle",
+    ],
+    "Bulles": ["bubble_spots", "bubble_community", "bubble_live", "menu"],
     "Carte": [
         "map_spot", "map_neighbor_spot", "map_add_favorite", "map_live_count",
         "map_wind_edit", "map_poi", "map_zone", "map_zoom_out_to_all",
+        "map_relief3d", "map_depth", "map_tide_tab",
     ],
     "Modales": ["wind_sectors_editor", "live_report", "live_spot_detail", "tour", "guest_auth_prompt", "error_retry"],
     "Premium": [
@@ -45,6 +49,15 @@ ELEMENT_GROUPS = {
         "cta_spot_limit", "cta_locked_badge", "cta_teaser_marker", "cta_slot_timeline",
     ],
 }
+# Éléments renommés quand le widget a changé de place : l'historique suit le nouveau nom.
+# La bulle Relief 3D est devenue le bouton « Mon Spot en 3D » du widget Carte/Satellite.
+ELEMENT_ALIASES = {"bubble_relief3d": "map_relief3d"}
+
+# Éléments propres à un format d'écran : 0 % sur l'autre n'est pas un désintérêt.
+ONLY_ON = {"bubble_spots": "desktop", "map_tide_tab": "mobile"}
+VIEWPORT_LABELS = {"mobile": "Téléphone", "desktop": "Grand écran"}
+MOBILE_UA = r"Mobi|Android|iPhone|iPod"
+
 GROUP_OF = {el: group for group, els in ELEMENT_GROUPS.items() for el in els}
 PAYWALL_ELEMENTS = ELEMENT_GROUPS["Premium"]
 TIER_ORDER = ["visiting", "signed_in", "early_adopter", "premium"]
@@ -93,10 +106,15 @@ async def _load(segment: str, days: Optional[int]) -> tuple[pd.DataFrame, pd.Dat
         df_events = df_events[df_events["page_type"] == "sessions"]
         df_events = _filter_segment(_filter_days(_filter_dev(df_events), "created_at", days), df_users, segment).copy()
         df_events["props"] = df_events["props"].apply(lambda p: p if isinstance(p, dict) else {})
+        df_events["element"] = df_events["element"].replace(ELEMENT_ALIASES)
+        # Écran posé par l'app sur chaque événement ; les plus anciens n'en ont pas
+        df_events["viewport"] = df_events["props"].apply(lambda p: p.get("viewport") or "unknown")
         df_events["tier"] = df_events["tier"].fillna("unknown")
     if not df_visits.empty:
         df_visits = df_visits[df_visits["page_type"] == "sessions"]
-        df_visits = _filter_segment(_filter_days(_filter_dev(df_visits), "entry_time", days), df_users, segment)
+        df_visits = _filter_segment(_filter_days(_filter_dev(df_visits), "entry_time", days), df_users, segment).copy()
+        is_mobile = df_visits["user_agent"].fillna("").str.contains(MOBILE_UA, regex=True)
+        df_visits["viewport"] = is_mobile.map({True: "mobile", False: "desktop"})
     return df_events, df_visits, df_analytics
 
 
@@ -105,37 +123,52 @@ def _prop(df: pd.DataFrame, key: str) -> pd.Series:
 
 
 async def get_element_usage_figure(segment: str, days: Optional[int] = None) -> str:
-    """Part des visites de /sessions où chaque élément a été utilisé au moins une fois."""
+    """Part des visites de /sessions où chaque élément a été utilisé au moins une fois,
+    sur téléphone et sur grand écran : la page n'y montre pas les mêmes widgets."""
     df_events, df_visits, _ = await _load(segment, days)
     if df_events.empty:
         return _empty_figure("Aucun événement ui_events sur la période")
 
-    n_visits = max(df_visits["session_id"].nunique() if not df_visits.empty else 0,
-                   df_events["session_id"].nunique())
     used = df_events[df_events["event"].isin(INTERACTION_EVENTS)]
-    by_element = used.groupby("element")["session_id"].nunique()
+    rows = []
+    totals = {}
+    for vp in ("mobile", "desktop"):
+        visits_vp = df_visits[df_visits["viewport"] == vp] if not df_visits.empty else df_visits
+        n_visits = max(visits_vp["session_id"].nunique() if not visits_vp.empty else 0,
+                       df_events.loc[df_events["viewport"] == vp, "session_id"].nunique())
+        totals[vp] = n_visits
+        by_element = used[used["viewport"] == vp].groupby("element")["session_id"].nunique()
+        elements = list(GROUP_OF) + [e for e in used["element"].unique() if e not in GROUP_OF]
+        for e in elements:
+            if ONLY_ON.get(e, vp) != vp:
+                continue
+            n = int(by_element.get(e, 0))
+            rows.append({
+                "écran": VIEWPORT_LABELS[vp],
+                "element": e,
+                "groupe": GROUP_OF.get(e, "Autre"),
+                "visites": n,
+                "part": round(n / n_visits * 100, 1) if n_visits else 0.0,
+            })
+    df = pd.DataFrame(rows)
 
-    elements = list(GROUP_OF) + [e for e in by_element.index if e not in GROUP_OF]
-    df = pd.DataFrame({
-        "element": elements,
-        "groupe": [GROUP_OF.get(e, "Autre") for e in elements],
-        "visites": [int(by_element.get(e, 0)) for e in elements],
-    })
-    df["part"] = (df["visites"] / n_visits * 100).round(1)
-    df = df.sort_values("part")
-
+    # Même ordre dans les deux colonnes : par part moyenne
+    order = df.groupby("element")["part"].mean().sort_values().index.tolist()
     fig = px.bar(
-        df, x="part", y="element", color="groupe", orientation="h",
+        df, x="part", y="element", color="groupe", orientation="h", facet_col="écran",
+        category_orders={"écran": list(VIEWPORT_LABELS.values()), "element": order[::-1]},
         text=df["part"].map(lambda v: f"{v:g} %"),
         hover_data={"visites": True, "part": ":.1f"},
-        labels={"part": "% des visites de /sessions", "element": ""},
+        labels={"part": "% des visites", "element": ""},
         template="plotly_white",
     )
+    fig.for_each_annotation(lambda a: a.update(text=(
+        f"{a.text.split('=')[-1]} — {totals['mobile' if 'Téléphone' in a.text else 'desktop']} visites"
+    )))
     fig.update_layout(
-        title=f"{n_visits} visites de /sessions — un élément à 0 % n'a jamais été utilisé",
-        yaxis=dict(categoryorder="array", categoryarray=df["element"].tolist()),
+        title="Visites de /sessions — un élément à 0 % n'a jamais été utilisé (absent si l'écran ne l'affiche pas)",
         legend_title_text="",
-        height=max(500, 22 * len(df)),
+        height=max(500, 22 * len(order)),
     )
     fig.update_traces(textposition="outside", cliponaxis=False)
     return fig.to_json()
