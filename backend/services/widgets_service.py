@@ -40,7 +40,7 @@ ELEMENT_GROUPS = {
     "Bulles": ["bubble_spots", "bubble_community", "bubble_live", "menu"],
     "Carte": [
         "map_spot", "map_neighbor_spot", "map_add_favorite", "map_live_count",
-        "map_wind_edit", "map_poi", "map_zone", "map_zoom_out_to_all",
+        "map_wind_edit", "map_poi", "map_zone", "map_zoom_out_to_all", "map_zoom_in_to_spot",
         "map_relief3d", "map_depth", "map_tide_tab",
     ],
     "Modales": ["wind_sectors_editor", "live_report", "live_spot_detail", "tour", "guest_auth_prompt", "error_retry"],
