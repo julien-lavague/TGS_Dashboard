@@ -7,9 +7,8 @@ from plotly.subplots import make_subplots
 
 from db.supabase_client import get_dataframe
 from core.user_segments import filter_users
+from core.sites import filter_site
 
-
-DEV_ORIGIN = "https://dev.thegoodspots.fr/"
 
 # X-axis config for daily bar charts: one tick per day, weekday name above the
 # date, and vertical gridlines so each bar clearly maps to its day.
@@ -22,12 +21,6 @@ DAILY_XAXIS = dict(
     gridcolor="rgba(0,0,0,0.12)",
     ticks="outside",
 )
-
-
-def _filter_dev_urls(df: pd.DataFrame) -> pd.DataFrame:
-    if "page_url" not in df.columns:
-        return df
-    return df[~df["page_url"].str.startswith(DEV_ORIGIN, na=False)]
 
 
 def _filter_future_entries(df: pd.DataFrame) -> pd.DataFrame:
@@ -85,13 +78,13 @@ def _apply_days_filter(df: pd.DataFrame, days: Optional[int]) -> pd.DataFrame:
     return df[entry_times >= cutoff]
 
 
-async def _load_analytics_merged(segment: str, days: Optional[int] = None) -> pd.DataFrame:
+async def _load_analytics_merged(segment: str, days: Optional[int] = None, site: str = "prod") -> pd.DataFrame:
     df_analytics, df_users = await asyncio.gather(
         get_dataframe("user_analytics"),
         get_dataframe("users"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = filter_site(df_analytics, site)
     df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 
@@ -102,8 +95,8 @@ async def _load_analytics_merged(segment: str, days: Optional[int] = None) -> pd
     return df_merged
 
 
-async def get_page_views_figure(segment: str, days: Optional[int] = None) -> str:
-    df = await _load_analytics_merged(segment, days)
+async def get_page_views_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
+    df = await _load_analytics_merged(segment, days, site)
 
     df["entry_date"] = pd.to_datetime(df["entry_time"], format="mixed").dt.date
     df_timeline = (
@@ -175,8 +168,8 @@ async def get_page_views_figure(segment: str, days: Optional[int] = None) -> str
     return fig.to_json()
 
 
-async def get_sessions_figure(segment: str, days: Optional[int] = None) -> str:
-    df = await _load_analytics_merged(segment, days)
+async def get_sessions_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
+    df = await _load_analytics_merged(segment, days, site)
 
     df["entry_date"] = pd.to_datetime(df["entry_time"], format="mixed").dt.date
     df_sessions = (
@@ -222,13 +215,13 @@ async def get_sessions_figure(segment: str, days: Optional[int] = None) -> str:
     return fig.to_json()
 
 
-async def get_sessions_per_week_since_signup_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_sessions_per_week_since_signup_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     df_analytics, df_users = await asyncio.gather(
         get_dataframe("user_analytics"),
         get_dataframe("users"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = filter_site(df_analytics, site)
     df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 
@@ -286,8 +279,8 @@ async def get_sessions_per_week_since_signup_figure(segment: str, days: Optional
     return fig.to_json()
 
 
-async def get_visit_duration_figure(segment: str, days: Optional[int] = None) -> str:
-    df = await _load_analytics_merged(segment, days)
+async def get_visit_duration_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
+    df = await _load_analytics_merged(segment, days, site)
 
     df["entry_date"] = pd.to_datetime(df["entry_time"], format="mixed").dt.date
     df_dur = (
@@ -334,13 +327,13 @@ async def get_visit_duration_figure(segment: str, days: Optional[int] = None) ->
     return fig.to_json()
 
 
-async def get_daily_active_users_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_daily_active_users_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     df_analytics, df_users = await asyncio.gather(
         get_dataframe("user_analytics"),
         get_dataframe("users"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = filter_site(df_analytics, site)
     df_analytics = _filter_future_entries(df_analytics).copy()
     df_analytics = _apply_days_filter(df_analytics, days)
 
@@ -579,13 +572,13 @@ async def get_daily_active_users_figure(segment: str, days: Optional[int] = None
     return fig.to_json()
 
 
-async def get_visit_frequency_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_visit_frequency_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     df_analytics, df_users = await asyncio.gather(
         get_dataframe("user_analytics"),
         get_dataframe("users"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = filter_site(df_analytics, site)
     df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 
@@ -695,8 +688,8 @@ async def get_visit_frequency_figure(segment: str, days: Optional[int] = None) -
     return fig.to_json()
 
 
-async def get_user_visits_pareto_figure(segment: str, days: Optional[int] = None) -> str:
-    df = await _load_analytics_merged(segment, days)
+async def get_user_visits_pareto_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
+    df = await _load_analytics_merged(segment, days, site)
 
     df["entry_date"] = pd.to_datetime(df["entry_time"], format="mixed").dt.date
 
@@ -753,8 +746,8 @@ async def get_user_visits_pareto_figure(segment: str, days: Optional[int] = None
     return fig.to_json()
 
 
-async def get_timeline_figure(segment: str, days: Optional[int] = None) -> str:
-    df = await _load_analytics_merged(segment, days)
+async def get_timeline_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
+    df = await _load_analytics_merged(segment, days, site)
 
     df_dur = (
         df.dropna(subset=["entry_time", "exit_time"])
@@ -879,7 +872,7 @@ def _vital_few_summary(df_vital: pd.DataFrame, n_users: int, total_visits: int) 
     )
 
 
-async def get_visitor_profiles_pareto_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_visitor_profiles_pareto_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     """Pareto of visiting users, annotated with who they are.
 
     Same ranking as the User Visits pareto (distinct days with at least one page
@@ -894,7 +887,7 @@ async def get_visitor_profiles_pareto_figure(segment: str, days: Optional[int] =
         get_dataframe("sports"),
     )
     df_filtered_users = filter_users(df_users, segment)
-    df_analytics = _filter_dev_urls(df_analytics)
+    df_analytics = filter_site(df_analytics, site)
     df_analytics = _filter_future_entries(df_analytics)
     df_analytics = _apply_days_filter(df_analytics, days)
 

@@ -7,6 +7,7 @@ import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SegmentSelector, type Segment } from "@/components/ui/SegmentSelector";
 import { TimeRangeSelector, type TimeRange, DAYS_FOR_RANGE } from "@/components/ui/TimeRangeSelector";
+import { SiteSelector, type Site } from "@/components/ui/SiteSelector";
 import { TabBar } from "@/components/ui/TabBar";
 
 const TABS = [
@@ -27,7 +28,7 @@ const TITLES: Record<TabId, string> = {
   "paywall-funnel": "Incitations Premium : vue → clic → pricing → abonnement",
 };
 
-const FETCHERS: Record<TabId, (segment: Segment, days?: number) => Promise<{ figure: string }>> = {
+const FETCHERS: Record<TabId, (segment: Segment, days?: number, site?: Site) => Promise<{ figure: string }>> = {
   "element-usage": api.widgets.getElementUsage,
   "timeline-depth": api.widgets.getTimelineDepth,
   "cell-clicks": api.widgets.getCellClicks,
@@ -38,13 +39,14 @@ const FETCHERS: Record<TabId, (segment: Segment, days?: number) => Promise<{ fig
 export default function WidgetsPage() {
   const [segment, setSegment] = useState<Segment>("release");
   const [timeRange, setTimeRange] = useState<TimeRange>("14d");
+  const [site, setSite] = useState<Site>("prod");
   const [activeTab, setActiveTab] = useState<TabId>("element-usage");
 
   const days = DAYS_FOR_RANGE[timeRange];
 
   const query = useQuery({
-    queryKey: ["widgets", activeTab, segment, timeRange],
-    queryFn: () => FETCHERS[activeTab](segment, days),
+    queryKey: ["widgets", activeTab, segment, timeRange, site],
+    queryFn: () => FETCHERS[activeTab](segment, days, site),
   });
 
   return (
@@ -57,6 +59,7 @@ export default function WidgetsPage() {
           </p>
         </div>
         <div className="flex gap-3 items-center flex-wrap justify-end">
+          <SiteSelector value={site} onChange={setSite} />
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
           <SegmentSelector value={segment} onChange={setSegment} />
         </div>

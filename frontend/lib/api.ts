@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse, ReleaseNote, ReleaseNoteCreate, ReleaseNotesResponse } from "./types";
+import type { Site } from "@/components/ui/SiteSelector";
 
 const client = axios.create({ baseURL: "/api" });
 
@@ -109,64 +110,64 @@ export const api = {
   },
 
   usage: {
-    getPageViews: (segment = "release", days?: number) =>
+    getPageViews: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/page-views", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/page-views", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getSessions: (segment = "release", days?: number) =>
+    getSessions: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/sessions", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/sessions", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getSessionsPerWeekSinceSignup: (segment = "release", days?: number) =>
+    getSessionsPerWeekSinceSignup: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/sessions-per-week-since-signup", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/sessions-per-week-since-signup", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getTimeline: (segment = "release", days?: number) =>
+    getTimeline: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/timeline", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/timeline", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getVisitDuration: (segment = "release", days?: number) =>
+    getVisitDuration: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/visit-duration", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/visit-duration", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getDailyActiveUsers: (segment = "release", days?: number) =>
+    getDailyActiveUsers: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/daily-active-users", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/daily-active-users", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getUserVisitsPareto: (segment = "release", days?: number) =>
+    getUserVisitsPareto: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/user-visits-pareto", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/user-visits-pareto", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getVisitFrequency: (segment = "release", days?: number) =>
+    getVisitFrequency: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/visit-frequency", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/visit-frequency", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getVisitorProfilesPareto: (segment = "release", days?: number) =>
+    getVisitorProfilesPareto: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/usage/visitor-profiles-pareto", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/usage/visitor-profiles-pareto", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
   },
 
   widgets: {
-    getElementUsage: (segment = "release", days?: number) =>
+    getElementUsage: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/widgets/element-usage", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/widgets/element-usage", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getTimelineDepth: (segment = "release", days?: number) =>
+    getTimelineDepth: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/widgets/timeline-depth", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/widgets/timeline-depth", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getCellClicks: (segment = "release", days?: number) =>
+    getCellClicks: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/widgets/cell-clicks", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/widgets/cell-clicks", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getFilters: (segment = "release", days?: number) =>
+    getFilters: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/widgets/filters", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/widgets/filters", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
-    getPaywallFunnel: (segment = "release", days?: number) =>
+    getPaywallFunnel: (segment = "release", days?: number, site: Site = "prod") =>
       client
-        .get<FigureResponse>("/widgets/paywall-funnel", { params: { segment, ...(days !== undefined && { days }) } })
+        .get<FigureResponse>("/widgets/paywall-funnel", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
   },
 

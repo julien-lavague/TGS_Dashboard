@@ -16,9 +16,8 @@ from plotly.subplots import make_subplots
 
 from db.supabase_client import get_dataframe
 from core.user_segments import filter_users
+from core.sites import filter_site
 
-
-DEV_ORIGINS = ("https://dev.thegoodspots.fr/", "http://localhost", "http://127.0.0.1")
 
 # Événements qui traduisent une action de l'utilisateur. Les vues de CTA,
 # l'affichage de la visite guidée et le résumé de scroll partent sans geste.
@@ -70,12 +69,6 @@ def _empty_figure(message: str) -> str:
     return fig.to_json()
 
 
-def _filter_dev(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty or "page_url" not in df.columns:
-        return df
-    return df[~df["page_url"].fillna("").str.startswith(DEV_ORIGINS)]
-
-
 def _filter_days(df: pd.DataFrame, column: str, days: Optional[int]) -> pd.DataFrame:
     if df.empty or days is None:
         return df
@@ -94,7 +87,7 @@ def _filter_segment(df: pd.DataFrame, df_users: pd.DataFrame, segment: str) -> p
     return df[in_segment]
 
 
-async def _load(segment: str, days: Optional[int]) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+async def _load(segment: str, days: Optional[int], site: str = "prod") -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """(ui_events de /sessions, visites de /sessions, user_analytics brut)."""
     df_events, df_analytics, df_users = await asyncio.gather(
         get_dataframe("ui_events"),
@@ -104,7 +97,7 @@ async def _load(segment: str, days: Optional[int]) -> tuple[pd.DataFrame, pd.Dat
     df_visits = df_analytics
     if not df_events.empty:
         df_events = df_events[df_events["page_type"] == "sessions"]
-        df_events = _filter_segment(_filter_days(_filter_dev(df_events), "created_at", days), df_users, segment).copy()
+        df_events = _filter_segment(_filter_days(filter_site(df_events, site), "created_at", days), df_users, segment).copy()
         df_events["props"] = df_events["props"].apply(lambda p: p if isinstance(p, dict) else {})
         df_events["element"] = df_events["element"].replace(ELEMENT_ALIASES)
         # Écran posé par l'app sur chaque événement ; les plus anciens n'en ont pas
@@ -112,7 +105,7 @@ async def _load(segment: str, days: Optional[int]) -> tuple[pd.DataFrame, pd.Dat
         df_events["tier"] = df_events["tier"].fillna("unknown")
     if not df_visits.empty:
         df_visits = df_visits[df_visits["page_type"] == "sessions"]
-        df_visits = _filter_segment(_filter_days(_filter_dev(df_visits), "entry_time", days), df_users, segment).copy()
+        df_visits = _filter_segment(_filter_days(filter_site(df_visits, site), "entry_time", days), df_users, segment).copy()
         is_mobile = df_visits["user_agent"].fillna("").str.contains(MOBILE_UA, regex=True)
         df_visits["viewport"] = is_mobile.map({True: "mobile", False: "desktop"})
     return df_events, df_visits, df_analytics
@@ -122,10 +115,10 @@ def _prop(df: pd.DataFrame, key: str) -> pd.Series:
     return df["props"].apply(lambda p: p.get(key))
 
 
-async def get_element_usage_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_element_usage_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     """Part des visites de /sessions où chaque élément a été utilisé au moins une fois,
     sur téléphone et sur grand écran : la page n'y montre pas les mêmes widgets."""
-    df_events, df_visits, _ = await _load(segment, days)
+    df_events, df_visits, _ = await _load(segment, days, site)
     if df_events.empty:
         return _empty_figure("Aucun événement ui_events sur la période")
 
@@ -174,9 +167,9 @@ async def get_element_usage_figure(segment: str, days: Optional[int] = None) -> 
     return fig.to_json()
 
 
-async def get_timeline_depth_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_timeline_depth_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     """Jusqu'où la timeline est parcourue, par tier, et part qui franchit l'horizon 24 h."""
-    df_events, _, _ = await _load(segment, days)
+    df_events, _, _ = await _load(segment, days, site)
     df = df_events[(df_events["event"] == "scroll_summary") & (df_events["element"] == "timeline")] if not df_events.empty else df_events
     if df.empty:
         return _empty_figure("Aucun résumé de timeline sur la période")
@@ -217,9 +210,9 @@ async def get_timeline_depth_figure(segment: str, days: Optional[int] = None) ->
     return fig.to_json()
 
 
-async def get_cell_clicks_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_cell_clicks_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     """Clics sur les scores individuels : à quelle échéance, sur quel score, quel rang de spot."""
-    df_events, _, _ = await _load(segment, days)
+    df_events, _, _ = await _load(segment, days, site)
     df = df_events[(df_events["element"] == "timeline_cell") & (df_events["event"] == "click")] if not df_events.empty else df_events
     if df.empty:
         return _empty_figure("Aucun clic sur une cellule de timeline sur la période")
@@ -246,9 +239,9 @@ async def get_cell_clicks_figure(segment: str, days: Optional[int] = None) -> st
     return fig.to_json()
 
 
-async def get_filters_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_filters_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     """Seuils de score choisis, et bascules de mode de vue."""
-    df_events, _, _ = await _load(segment, days)
+    df_events, _, _ = await _load(segment, days, site)
     if df_events.empty:
         return _empty_figure("Aucun événement sur la période")
     n_visits = df_events["session_id"].nunique()
@@ -274,10 +267,10 @@ async def get_filters_figure(segment: str, days: Optional[int] = None) -> str:
     return fig.to_json()
 
 
-async def get_paywall_funnel_figure(segment: str, days: Optional[int] = None) -> str:
+async def get_paywall_funnel_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
     """Entonnoir par CTA Premium : vue → clic → page pricing → abonnement."""
     (df_events, _, df_pricing), df_subs = await asyncio.gather(
-        _load(segment, days),
+        _load(segment, days, site),
         get_dataframe("subscriptions"),
     )
     if df_events.empty:

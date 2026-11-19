@@ -7,6 +7,7 @@ import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SegmentSelector, type Segment } from "@/components/ui/SegmentSelector";
 import { TimeRangeSelector, type TimeRange, DAYS_FOR_RANGE } from "@/components/ui/TimeRangeSelector";
+import { SiteSelector, type Site } from "@/components/ui/SiteSelector";
 import { TabBar } from "@/components/ui/TabBar";
 
 const TABS = [
@@ -26,61 +27,62 @@ type TabId = (typeof TABS)[number]["id"];
 export default function UsagePage() {
   const [segment, setSegment] = useState<Segment>("release");
   const [timeRange, setTimeRange] = useState<TimeRange>("14d");
+  const [site, setSite] = useState<Site>("prod");
   const [activeTab, setActiveTab] = useState<TabId>("daily-active-users");
 
   const days = DAYS_FOR_RANGE[timeRange];
 
   const pageViews = useQuery({
-    queryKey: ["page-views", segment, timeRange],
-    queryFn: () => api.usage.getPageViews(segment, days),
+    queryKey: ["page-views", segment, timeRange, site],
+    queryFn: () => api.usage.getPageViews(segment, days, site),
     enabled: activeTab === "page-views",
   });
 
   const sessions = useQuery({
-    queryKey: ["sessions", segment, timeRange],
-    queryFn: () => api.usage.getSessions(segment, days),
+    queryKey: ["sessions", segment, timeRange, site],
+    queryFn: () => api.usage.getSessions(segment, days, site),
     enabled: activeTab === "sessions",
   });
 
   const sessionsPerWeek = useQuery({
-    queryKey: ["sessions-per-week-since-signup", segment, timeRange],
-    queryFn: () => api.usage.getSessionsPerWeekSinceSignup(segment, days),
+    queryKey: ["sessions-per-week-since-signup", segment, timeRange, site],
+    queryFn: () => api.usage.getSessionsPerWeekSinceSignup(segment, days, site),
     enabled: activeTab === "sessions-since-signup",
   });
 
   const visitDuration = useQuery({
-    queryKey: ["visit-duration", segment, timeRange],
-    queryFn: () => api.usage.getVisitDuration(segment, days),
+    queryKey: ["visit-duration", segment, timeRange, site],
+    queryFn: () => api.usage.getVisitDuration(segment, days, site),
     enabled: activeTab === "visit-duration",
   });
 
   const dailyActiveUsers = useQuery({
-    queryKey: ["daily-active-users", segment, timeRange],
-    queryFn: () => api.usage.getDailyActiveUsers(segment, days),
+    queryKey: ["daily-active-users", segment, timeRange, site],
+    queryFn: () => api.usage.getDailyActiveUsers(segment, days, site),
     enabled: activeTab === "daily-active-users",
   });
 
   const timeline = useQuery({
-    queryKey: ["timeline", segment, timeRange],
-    queryFn: () => api.usage.getTimeline(segment, days),
+    queryKey: ["timeline", segment, timeRange, site],
+    queryFn: () => api.usage.getTimeline(segment, days, site),
     enabled: activeTab === "timeline",
   });
 
   const userVisitsPareto = useQuery({
-    queryKey: ["user-visits-pareto", segment, timeRange],
-    queryFn: () => api.usage.getUserVisitsPareto(segment, days),
+    queryKey: ["user-visits-pareto", segment, timeRange, site],
+    queryFn: () => api.usage.getUserVisitsPareto(segment, days, site),
     enabled: activeTab === "user-visits-pareto",
   });
 
   const visitFrequency = useQuery({
-    queryKey: ["visit-frequency", segment, timeRange],
-    queryFn: () => api.usage.getVisitFrequency(segment, days),
+    queryKey: ["visit-frequency", segment, timeRange, site],
+    queryFn: () => api.usage.getVisitFrequency(segment, days, site),
     enabled: activeTab === "visit-frequency",
   });
 
   const visitorProfiles = useQuery({
-    queryKey: ["visitor-profiles-pareto", segment, timeRange],
-    queryFn: () => api.usage.getVisitorProfilesPareto(segment, days),
+    queryKey: ["visitor-profiles-pareto", segment, timeRange, site],
+    queryFn: () => api.usage.getVisitorProfilesPareto(segment, days, site),
     enabled: activeTab === "visitor-profiles-pareto",
   });
 
@@ -94,6 +96,7 @@ export default function UsagePage() {
           </p>
         </div>
         <div className="flex gap-3 items-center flex-wrap justify-end">
+          <SiteSelector value={site} onChange={setSite} />
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
           <SegmentSelector value={segment} onChange={setSegment} />
         </div>
