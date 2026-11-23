@@ -18,10 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${geist.variable} h-full antialiased`}>
-      <body className="h-full flex">
+      <body className="h-full flex flex-col md:flex-row">
         <Providers>
           <Sidebar />
-          <main className="flex-1 overflow-y-auto bg-muted/30 p-8">
+          <main className="flex-1 min-w-0 overflow-y-auto bg-muted/30 p-4 md:p-8">
             {children}
           </main>
         </Providers>

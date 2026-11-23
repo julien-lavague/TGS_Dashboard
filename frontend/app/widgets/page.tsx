@@ -51,14 +51,14 @@ export default function WidgetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Widgets</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Interactions sur la page sessions (table ui_events), visiteurs anonymes compris
           </p>
         </div>
-        <div className="flex gap-3 items-center flex-wrap justify-end">
+        <div className="flex gap-3 items-center flex-wrap md:justify-end">
           <SiteSelector value={site} onChange={setSite} />
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
           <SegmentSelector value={segment} onChange={setSegment} />
@@ -72,7 +72,7 @@ export default function WidgetsPage() {
           <CardTitle>{TITLES[activeTab]}</CardTitle>
         </CardHeader>
         {/* Usage par élément : une barre par élément, la figure grandit avec la liste */}
-        <CardContent className="h-[calc(100vh-260px)] overflow-y-auto">
+        <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)] overflow-y-auto">
           {query.isPending ? (
             <Placeholder text="Loading…" />
           ) : query.isError ? (

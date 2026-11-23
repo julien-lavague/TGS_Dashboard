@@ -61,7 +61,7 @@ export default function EquipmentsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Equipments</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -78,7 +78,7 @@ export default function EquipmentsPage() {
           <CardHeader>
             <CardTitle>Equipment Coverage by Sport & Level</CardTitle>
           </CardHeader>
-          <CardContent className="h-[450px]">
+          <CardContent className="h-[380px] md:h-[450px]">
             <ChartArea query={coverage} />
           </CardContent>
         </Card>
@@ -89,7 +89,7 @@ export default function EquipmentsPage() {
           <CardHeader>
             <CardTitle>Equipment Count by Category & Sport</CardTitle>
           </CardHeader>
-          <CardContent className="h-[450px]">
+          <CardContent className="h-[380px] md:h-[450px]">
             <ChartArea query={byType} />
           </CardContent>
         </Card>
@@ -298,7 +298,7 @@ function QuantityStatsTab({
         <CardHeader>
           <CardTitle>Equipment quantity per user — by sport & level</CardTitle>
         </CardHeader>
-        <CardContent className="h-[450px]">
+        <CardContent className="h-[380px] md:h-[450px]">
           <PlotlyChart figure={data.figure} className="h-full" />
         </CardContent>
       </Card>

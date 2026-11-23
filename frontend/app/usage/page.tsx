@@ -88,14 +88,14 @@ export default function UsagePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">User Usage</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Page views, sessions, and time-on-page analytics
           </p>
         </div>
-        <div className="flex gap-3 items-center flex-wrap justify-end">
+        <div className="flex gap-3 items-center flex-wrap md:justify-end">
           <SiteSelector value={site} onChange={setSite} />
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
           <SegmentSelector value={segment} onChange={setSegment} />
@@ -109,7 +109,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>Page Views by Type Over Time</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={pageViews} />
           </CardContent>
         </Card>
@@ -120,7 +120,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>Sessions per User Over Time</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={sessions} />
           </CardContent>
         </Card>
@@ -138,7 +138,7 @@ export default function UsagePage() {
                 : "Week"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={dailyActiveUsers} />
           </CardContent>
         </Card>
@@ -149,7 +149,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>Sessions per Week Since Signup</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={sessionsPerWeek} />
           </CardContent>
         </Card>
@@ -160,7 +160,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>Visit Duration by Page Type</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={visitDuration} />
           </CardContent>
         </Card>
@@ -171,7 +171,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>Page Duration Timeline</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={timeline} />
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>User Day Visits — Pareto</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={userVisitsPareto} />
           </CardContent>
         </Card>
@@ -193,7 +193,7 @@ export default function UsagePage() {
           <CardHeader>
             <CardTitle>Visit Frequency per User</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={visitFrequency} />
           </CardContent>
         </Card>
@@ -206,7 +206,7 @@ export default function UsagePage() {
           </CardHeader>
           {/* The figure stacks a pareto and a per-user table, so its height grows
               with the user count — scroll instead of clipping it. */}
-          <CardContent className="h-[calc(100vh-260px)] overflow-y-auto">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)] overflow-y-auto">
             <ChartArea query={visitorProfiles} fitHeight={false} />
           </CardContent>
         </Card>

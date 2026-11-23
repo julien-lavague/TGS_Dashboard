@@ -29,7 +29,7 @@ interface Props {
 
 export function TimeRangeSelector({ value, onChange }: Props) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 flex-wrap">
       {TIME_RANGES.map((r) => (
         <Button
           key={r.value}

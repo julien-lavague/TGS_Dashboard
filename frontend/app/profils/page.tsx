@@ -92,7 +92,7 @@ export default function ProfilsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">User Profiles</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -110,7 +110,7 @@ export default function ProfilsPage() {
           <CardHeader>
             <CardTitle>Level Distribution by Sport</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={levelBySport} />
           </CardContent>
         </Card>
@@ -153,7 +153,7 @@ export default function ProfilsPage() {
           <CardHeader>
             <CardTitle>Spot Distribution in Profiles</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             <ChartArea query={spotDistribution} />
           </CardContent>
         </Card>
@@ -164,7 +164,7 @@ export default function ProfilsPage() {
           <CardHeader>
             <CardTitle>Carte des spots favoris</CardTitle>
           </CardHeader>
-          <CardContent className="h-[600px] p-0 overflow-hidden rounded-b-lg">
+          <CardContent className="h-[420px] md:h-[600px] p-0 overflow-hidden rounded-b-lg">
             {spotMap.isLoading && <Placeholder text="Loading…" />}
             {spotMap.isError && (
               <Placeholder text="Failed to load — is the backend running?" error />
@@ -328,7 +328,7 @@ function UserDetailTab({
                 </span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[520px] p-0 overflow-hidden rounded-b-lg">
+            <CardContent className="h-[400px] md:h-[520px] p-0 overflow-hidden rounded-b-lg">
               {totalSpots === 0 && (
                 <Placeholder text="Cet utilisateur n'a aucun spot favori géolocalisé." />
               )}
@@ -372,7 +372,7 @@ function UserProfileCard({ profile }: { profile: UserProfile }) {
   const { wind, waves, tide } = profile;
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-3">
           {profile.sport}
           <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
@@ -609,7 +609,7 @@ function CharacteristicsTab({
 }) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm text-muted-foreground">Regrouper par :</span>
         <div className="flex gap-2">
           <Button
@@ -754,7 +754,7 @@ function SpotsPerProfileDetail({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
         <div className="flex items-center gap-3">
           <CardTitle className="text-base font-medium text-muted-foreground">
             Detail

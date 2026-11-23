@@ -43,7 +43,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Overview</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -60,7 +60,7 @@ export default function OverviewPage() {
           <CardHeader>
             <CardTitle>New Users Per Week</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100vh-260px)]">
+          <CardContent className="h-[65vh] min-h-[380px] md:h-[calc(100vh-260px)]">
             {userGrowth.isLoading && <Placeholder text="Loading…" />}
             {userGrowth.isError && (
               <Placeholder text="Failed to load — is the backend running?" error />

@@ -114,7 +114,7 @@ export default function ReleaseNotesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Release Notes</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -138,7 +138,7 @@ export default function ReleaseNotesPage() {
           </CardHeader>
 
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Version">
                 <input
                   value={version}
@@ -158,7 +158,7 @@ export default function ReleaseNotesPage() {
             </div>
 
             <Field label="Audience">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {AUDIENCES.map((option) => (
                   <Button
                     key={option.id}
