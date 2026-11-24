@@ -169,6 +169,10 @@ export const api = {
       client
         .get<FigureResponse>("/widgets/paywall-funnel", { params: { segment, site, ...(days !== undefined && { days }) } })
         .then((r) => r.data),
+    getSailCatalog: (segment = "release", days?: number, site: Site = "prod") =>
+      client
+        .get<FigureResponse>("/widgets/sail-catalog", { params: { segment, site, ...(days !== undefined && { days }) } })
+        .then((r) => r.data),
   },
 
   releaseNotes: {

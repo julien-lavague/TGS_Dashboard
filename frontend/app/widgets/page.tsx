@@ -16,6 +16,7 @@ const TABS = [
   { id: "cell-clicks", label: "Clics scores" },
   { id: "filters", label: "Filtres" },
   { id: "paywall-funnel", label: "Premium" },
+  { id: "sail-catalog", label: "Catalogue d'ailes" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -26,6 +27,7 @@ const TITLES: Record<TabId, string> = {
   "cell-clicks": "Clics sur les scores individuels",
   "filters": "Filtre de score et mode de vue",
   "paywall-funnel": "Incitations Premium : vue → clic → pricing → abonnement",
+  "sail-catalog": "Choix des ailes dans le catalogue : recherche → ajout → enregistrement",
 };
 
 const FETCHERS: Record<TabId, (segment: Segment, days?: number, site?: Site) => Promise<{ figure: string }>> = {
@@ -34,7 +36,11 @@ const FETCHERS: Record<TabId, (segment: Segment, days?: number, site?: Site) => 
   "cell-clicks": api.widgets.getCellClicks,
   "filters": api.widgets.getFilters,
   "paywall-funnel": api.widgets.getPaywallFunnel,
+  "sail-catalog": api.widgets.getSailCatalog,
 };
+
+// Figures plus hautes que la carte : elles défilent au lieu d'être écrasées.
+const TALL_TABS: TabId[] = ["element-usage", "sail-catalog"];
 
 export default function WidgetsPage() {
   const [segment, setSegment] = useState<Segment>("release");
@@ -80,7 +86,7 @@ export default function WidgetsPage() {
           ) : (
             <PlotlyChart
               figure={query.data.figure}
-              className={activeTab === "element-usage" ? "w-full" : "h-full"}
+              className={TALL_TABS.includes(activeTab) ? "w-full" : "h-full"}
             />
           )}
         </CardContent>
