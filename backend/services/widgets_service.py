@@ -322,3 +322,116 @@ async def get_paywall_funnel_figure(segment: str, days: Optional[int] = None, si
     fig.update_layout(barmode="stack", template="plotly_white", legend_title_text="tier",
                       title=f"Locked slot consulté dans {df_events.loc[df_events['element'] == 'locked_slot', 'session_id'].nunique()} visites")
     return fig.to_json()
+
+
+# Le choix des ailes dans le catalogue (onboarding et modale quiver de /sessions)
+# écrit `specs.product_id` dans user_equipments et, depuis son instrumentation,
+# l'élément `sail_catalog` dans ui_events.
+CATALOG_SOURCES = {"onboarding": "Onboarding", "quiver_prompt": "Modale quiver (sessions)"}
+CATALOG_ORIGINS = {"add_product": "Modèle du catalogue", "add_size": "Taille seule"}
+
+
+def _catalog_funnel(ev: pd.DataFrame) -> pd.DataFrame:
+    """Visites distinctes à chaque étape, par écran d'origine."""
+    stages = [
+        ("Modale ouverte", (ev["element"] == "quiver_prompt") & (ev["event"] == "open")),
+        ("Recherche dans le catalogue", ev["event"] == "search"),
+        ("Modèle ajouté", ev["target"] == "add_product"),
+        ("Taille seule ajoutée", ev["target"] == "add_size"),
+        ("Quiver enregistré", ev["event"] == "submit"),
+        ("… avec ≥ 1 modèle du catalogue", (ev["event"] == "submit") & (ev["from_catalog"] > 0)),
+    ]
+    rows = []
+    for source, label in CATALOG_SOURCES.items():
+        in_source = ev["source"] == source
+        for stage, mask in stages:
+            if stage == "Modale ouverte" and source != "quiver_prompt":
+                continue
+            rows.append({"écran": label, "étape": stage, "visites": ev.loc[in_source & mask, "session_id"].nunique()})
+    return pd.DataFrame(rows)
+
+
+async def get_sail_catalog_figure(segment: str, days: Optional[int] = None, site: str = "prod") -> str:
+    """Usage du catalogue d'ailes : entonnoir recherche → ajout → enregistrement,
+    pièces ajoutées par jour selon leur origine, et modèles enregistrés par les comptes."""
+    df_events, df_users, df_eq, df_user_sports, df_products = await asyncio.gather(
+        get_dataframe("ui_events"),
+        get_dataframe("users"),
+        get_dataframe("user_equipments"),
+        get_dataframe("user_sports"),
+        get_dataframe("products"),
+    )
+
+    # ui_events : l'étape quiver vit aussi sur l'onboarding, on ne filtre pas sur /sessions
+    ev = df_events
+    if not ev.empty:
+        ev = ev[(ev["element"] == "sail_catalog") | ((ev["element"] == "quiver_prompt") & (ev["event"] == "open"))]
+        ev = _filter_segment(_filter_days(filter_site(ev, site), "created_at", days), df_users, segment).copy()
+        props = ev["props"].apply(lambda p: p if isinstance(p, dict) else {})
+        # L'ouverture de la modale quiver n'a pas de source : elle est la modale
+        ev["source"] = props.apply(lambda p: p.get("source")).fillna("quiver_prompt")
+        ev["target"] = props.apply(lambda p: p.get("target"))
+        ev["from_catalog"] = props.apply(lambda p: p.get("from_catalog") or 0)
+        ev["day"] = pd.to_datetime(ev["created_at"], format="mixed", utc=True).dt.date
+
+    # user_equipments : seuls les comptes connectés y écrivent ; pas de page_url, donc pas de filtre de site
+    eq = df_eq.copy()
+    eq["product_id"] = eq["specs"].apply(lambda s: s.get("product_id") if isinstance(s, dict) else None)
+    eq = eq[eq["product_id"].notna()]
+    eq = eq.merge(df_user_sports[["id", "user_id"]].rename(columns={"id": "user_sport_id"}), on="user_sport_id", how="left")
+    eq = eq[eq["user_id"].isin(filter_users(df_users, segment)["id"])]
+    eq = _filter_days(eq, "created_at", days)
+    products = df_products.set_index("id")
+    eq["modèle"] = eq["product_id"].astype(int).map(
+        lambda pid: f"{products.at[pid, 'brand']} {products.at[pid, 'product_name']} {products.at[pid, 'size_value']:g}{products.at[pid, 'size_unit'] or ''}"
+        if pid in products.index else f"Produit #{pid}"
+    )
+    eq["type"] = eq["type"].str.capitalize()
+
+    if ev.empty and eq.empty:
+        return _empty_figure("Aucun choix dans le catalogue sur la période")
+
+    funnel = _catalog_funnel(ev) if not ev.empty else pd.DataFrame(columns=["écran", "étape", "visites"])
+    adds = ev[ev["target"].isin(CATALOG_ORIGINS)] if not ev.empty else ev
+    models = (
+        eq.groupby(["modèle", "type"]).agg(comptes=("user_id", "nunique")).reset_index()
+        .sort_values("comptes", ascending=True).tail(15)
+    )
+
+    fig = make_subplots(
+        rows=3, cols=1, row_heights=[0.36, 0.3, 0.34], vertical_spacing=0.1,
+        subplot_titles=(
+            "Entonnoir par écran (visites distinctes)",
+            "Pièces ajoutées par jour, selon leur origine",
+            "Modèles enregistrés par les comptes connectés (prod + dev)",
+        ),
+    )
+    for label in CATALOG_SOURCES.values():
+        sub = funnel[funnel["écran"] == label]
+        fig.add_trace(go.Bar(x=sub["visites"], y=sub["étape"], name=label, orientation="h",
+                             text=sub["visites"], textposition="auto", legendgroup="source"), row=1, col=1)
+    for target, label in CATALOG_ORIGINS.items():
+        per_day = adds[adds["target"] == target].groupby("day").size() if not adds.empty else pd.Series(dtype=int)
+        fig.add_trace(go.Bar(x=list(per_day.index), y=per_day.values, name=label, legendgroup="origin"), row=2, col=1)
+    for kind in sorted(models["type"].unique()):
+        sub = models[models["type"] == kind]
+        fig.add_trace(go.Bar(x=sub["comptes"], y=sub["modèle"], name=kind, orientation="h", legendgroup="kind"), row=3, col=1)
+
+    fig.update_yaxes(autorange="reversed", row=1, col=1)
+    fig.update_yaxes(title_text="pièces", row=2, col=1)
+    fig.update_xaxes(title_text="comptes", dtick=1, row=3, col=1)
+
+    submits = ev[(ev["event"] == "submit") & (ev["from_catalog"] > 0)] if not ev.empty else ev
+    anonymous = submits["visitor_id"][submits["user_id"].isna()].nunique() if not submits.empty else 0
+    n_accounts = eq["user_id"].nunique()
+    s = lambda n: "s" if n > 1 else ""
+    fig.update_layout(
+        barmode="stack", template="plotly_white", height=1100,
+        title=(
+            f"{len(eq)} pièce{s(len(eq))} du catalogue enregistrée{s(len(eq))} par {n_accounts} compte{s(n_accounts)}"
+            f" · {anonymous} visiteur{s(anonymous)} anonyme{s(anonymous)} avec un quiver issu du catalogue"
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="left", x=0),
+        margin=dict(t=120, l=220),
+    )
+    return fig.to_json()

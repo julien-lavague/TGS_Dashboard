@@ -6,6 +6,7 @@ from services.widgets_service import (
     get_element_usage_figure,
     get_filters_figure,
     get_paywall_funnel_figure,
+    get_sail_catalog_figure,
     get_timeline_depth_figure,
 )
 
@@ -37,3 +38,8 @@ async def filters(segment: str = Query("release"), days: Optional[int] = Query(N
 @router.get("/paywall-funnel", response_model=FigureResponse)
 async def paywall_funnel(segment: str = Query("release"), days: Optional[int] = Query(None), site: Site = Query("prod")):
     return FigureResponse(figure=await get_paywall_funnel_figure(segment, days, site))
+
+
+@router.get("/sail-catalog", response_model=FigureResponse)
+async def sail_catalog(segment: str = Query("release"), days: Optional[int] = Query(None), site: Site = Query("prod")):
+    return FigureResponse(figure=await get_sail_catalog_figure(segment, days, site))
