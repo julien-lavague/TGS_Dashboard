@@ -7,7 +7,7 @@ import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SegmentSelector, type Segment } from "@/components/ui/SegmentSelector";
 import { TabBar } from "@/components/ui/TabBar";
-import type { EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentCharStat, EquipmentQuantityResponse, EquipmentQuantityStat } from "@/lib/types";
+import type { EquipmentNamesResponse, EquipmentDistributionResponse,EquipmentCharacteristicsResponse, EquipmentCharStat, EquipmentQuantityResponse, EquipmentQuantityStat } from "@/lib/types";
 
 const TABS = [
   { id: "coverage", label: "Coverage" },
@@ -44,6 +44,12 @@ export default function EquipmentsPage() {
   const names = useQuery({
     queryKey: ["equipment-names", segment],
     queryFn: () => api.equipments.getNames(segment),
+    enabled: activeTab === "names",
+  });
+
+  const distribution = useQuery({
+    queryKey: ["equipment-distribution", segment],
+    queryFn: () => api.equipments.getDistribution(segment),
     enabled: activeTab === "names",
   });
 
@@ -93,6 +99,10 @@ export default function EquipmentsPage() {
             <ChartArea query={byType} />
           </CardContent>
         </Card>
+      )}
+
+      {activeTab === "names" && (
+        <DistributionCharts query={distribution} />
       )}
 
       {activeTab === "names" && (
@@ -353,6 +363,42 @@ function QuantityStatsTable({ stats }: { stats: EquipmentQuantityStat[] }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function DistributionCharts({ query }: { query: ReturnType<typeof useQuery<EquipmentDistributionResponse>> }) {
+  const charts = [
+    {
+      key: "brands" as const,
+      title: "Marques par sport & niveau",
+      hint: "Marque du produit choisi dans le catalogue, sinon déduite du nom saisi.",
+    },
+    {
+      key: "board_types" as const,
+      title: "Types de planche par sport & niveau",
+      hint: "« Twin-tip » est la valeur proposée par défaut dans l'app.",
+    },
+  ];
+  return (
+    <div className="space-y-6">
+      {charts.map((c) => (
+        <Card key={c.key}>
+          <CardHeader>
+            <CardTitle>{c.title}</CardTitle>
+            <p className="text-muted-foreground text-xs">{c.hint}</p>
+          </CardHeader>
+          <CardContent className="h-[380px] md:h-[450px]">
+            {query.isLoading ? (
+              <Placeholder text="Loading…" />
+            ) : query.isError ? (
+              <Placeholder text="Failed to load — is the backend running?" error />
+            ) : query.data ? (
+              <PlotlyChart figure={query.data[c.key]} className="h-full" />
+            ) : null}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

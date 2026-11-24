@@ -1,3 +1,4 @@
+import re
 import asyncio
 import numpy as np
 import pandas as pd
@@ -175,6 +176,176 @@ async def get_equipment_names(segment: str) -> dict:
         sports.append({"sport": sport_name, "categories": categories})
 
     return {"sports": sports}
+
+
+UNKNOWN_BRAND = "Non renseignée"
+UNMATCHED_BRAND = "Nom libre non reconnu"
+DEFAULT_NAME_RE = r"^(kite|wing|foil|board|planche|aile)\s*\d*$"
+# Noms courts utilisés au quotidien pour les marques au nom long du catalogue
+BRAND_ALIASES = {
+    "slingshot": "Slingshot Sports",
+    "north": "North Kiteboarding",
+    "core": "Core Kiteboarding",
+    "armstrong": "Armstrong Foils",
+    "axis": "Axis Foils",
+    "lift": "Lift Foils",
+    "code": "Code Foils",
+    "sab": "SAB Foil",
+    "ak": "AK Durable Supply Co.",
+    "fone": "F-One",
+}
+BOARD_TYPE_LABELS = {
+    "twin-tip": "Twin-tip",
+    "surfboard": "Surf",
+    "shortboard": "Shortboard",
+    "longboard": "Longboard",
+    "fish": "Fish",
+    "egg": "Egg",
+    "gun": "Gun",
+    "softboard": "Softboard",
+    "malibu": "Malibu",
+    "race": "Race",
+}
+
+
+def _brand_resolver(df_products: pd.DataFrame):
+    """Déduit la marque d'un équipement : produit du catalogue, puis nom libre."""
+    brand_by_product = df_products.set_index("id")["brand"].to_dict()
+    brands = sorted(df_products["brand"].dropna().unique(), key=len, reverse=True)
+    brand_tokens = {b.lower(): b for b in brands}
+    brand_tokens.update({b.lower().split()[0].replace("-", ""): b for b in brands})
+    brand_tokens.update(BRAND_ALIASES)
+
+    # Premier mot d'un modèle (« Rebel », « Veloce »…) → marque, s'il n'est pas ambigu
+    first_words = (
+        df_products.dropna(subset=["product_name", "brand"])
+        .assign(word=lambda d: d["product_name"].str.split().str[0].str.lower())
+        .groupby("word")["brand"].unique()
+    )
+    model_tokens = {w: b[0] for w, b in first_words.items() if len(b) == 1 and len(w) >= 3}
+
+    def resolve(name, specs) -> str:
+        product_id = specs.get("product_id") if isinstance(specs, dict) else None
+        if product_id and product_id in brand_by_product:
+            return brand_by_product[product_id]
+        text = (name or "").strip().lower()
+        if not text or re.match(DEFAULT_NAME_RE, text):
+            return UNKNOWN_BRAND
+        for token in brands:
+            if token.lower() in text:
+                return token
+        words = re.findall(r"[a-z0-9]+", text.replace("-", ""))
+        for w in words:
+            if w in brand_tokens:
+                return brand_tokens[w]
+        for w in words:
+            if w in model_tokens:
+                return model_tokens[w]
+        return UNMATCHED_BRAND
+
+    return resolve
+
+
+def _stacked_by_level(
+    df: pd.DataFrame, color: str, title: str, y_label: str, color_order: list[str], color_map: dict | None = None
+) -> str:
+    if df.empty:
+        fig = px.bar(title=title)
+        fig.add_annotation(text="Aucune donnée pour ce segment", showarrow=False, xref="paper", yref="paper", x=0.5, y=0.5)
+        fig.update_layout(height=450, xaxis=dict(visible=False), yaxis=dict(visible=False))
+        return fig.to_json()
+
+    df_counts = df.groupby(["sport", "level", color]).size().reset_index(name="count")
+    totals = df_counts.groupby(["sport", "level"])["count"].transform("sum")
+    df_counts["share"] = (df_counts["count"] / totals * 100).round(0)
+    df_counts["level"] = pd.Categorical(df_counts["level"], categories=LEVEL_ORDER + ["non renseigné"], ordered=True)
+    df_counts = df_counts.sort_values(["sport", "level"])
+    df_counts["x_label"] = df_counts["sport"] + " · " + df_counts["level"].astype(str)
+
+    fig = px.bar(
+        df_counts,
+        x="x_label",
+        y="count",
+        color=color,
+        barmode="stack",
+        title=title,
+        labels={"count": y_label, "x_label": "", color: ""},
+        category_orders={"x_label": df_counts["x_label"].unique().tolist(), color: color_order},
+        custom_data=[color, "share"],
+        color_discrete_map=color_map or {},
+        text="count",
+    )
+    fig.update_traces(
+        textposition="inside",
+        hovertemplate="%{x}<br>%{customdata[0]} : %{y} (%{customdata[1]:.0f} %)<extra></extra>",
+    )
+    fig.update_layout(
+        height=450,
+        margin=dict(l=60, r=40, t=60, b=80),
+        yaxis=dict(title=y_label),
+        legend=dict(title=""),
+    )
+    return fig.to_json()
+
+
+async def get_equipment_distribution(segment: str) -> dict:
+    """Répartition des marques (toutes pièces) et des types de planche, par sport et niveau."""
+    df_user_sports, df_equipments, df_users, df_sports, df_products = await asyncio.gather(
+        get_dataframe("user_sports"),
+        get_dataframe("user_equipments"),
+        get_dataframe("users"),
+        get_dataframe("sports"),
+        get_dataframe("products"),
+    )
+
+    df_user_sports = df_user_sports[df_user_sports["is_active"] == True]
+    df_equipments = df_equipments[df_equipments["is_active"] == True]
+    df_filtered_users = filter_users(df_users, segment)
+    df_user_sports = df_user_sports[df_user_sports["user_id"].isin(df_filtered_users["id"])]
+
+    df = df_equipments.merge(
+        df_user_sports[["id", "sport_id", "level"]].rename(columns={"id": "user_sport_id"}),
+        on="user_sport_id",
+        how="inner",
+    )
+    sport_names = df_sports[["id", "display_name"]].rename(columns={"id": "sport_id", "display_name": "sport"})
+    df = df.merge(sport_names, on="sport_id", how="left")
+    df["sport"] = df["sport"].fillna("Unknown")
+    df["level"] = df["level"].fillna("non renseigné")
+
+    resolve = _brand_resolver(df_products)
+    df["brand"] = [resolve(n, s) for n, s in zip(df["name"], df["specs"])]
+    # Les pièces au nom par défaut (« Kite 1 »…) sont l'écrasante majorité : on les compte
+    # dans le titre mais on ne les empile pas, sinon les marques deviennent illisibles.
+    named = df[df["brand"] != UNKNOWN_BRAND]
+    known = named.loc[named["brand"] != UNMATCHED_BRAND, "brand"]
+    brand_order = known.value_counts().index.tolist() + [UNMATCHED_BRAND]
+    n_known = len(known)
+    brands_fig = _stacked_by_level(
+        named,
+        "brand",
+        f"Marques des équipements : {n_known} pièce{'s' if n_known > 1 else ''} identifiée{'s' if n_known > 1 else ''}"
+        f" sur {len(df)} ({len(df) - len(named)} sans nom ni produit du catalogue, non affichées)",
+        "Pièces d'équipement",
+        brand_order,
+        {UNMATCHED_BRAND: "#d1d5db"},
+    )
+
+    boards = df[df["type"] == "board"].copy()
+    boards["board_type"] = [
+        BOARD_TYPE_LABELS.get(s.get("board_type"), s.get("board_type")) if isinstance(s, dict) and s.get("board_type") else "Non renseigné"
+        for s in boards["specs"]
+    ]
+    board_order = boards["board_type"].value_counts().index.tolist()
+    board_types_fig = _stacked_by_level(
+        boards,
+        "board_type",
+        f"Types de planche ({len(boards)} planche{'s' if len(boards) > 1 else ''})",
+        "Planches",
+        board_order,
+    )
+
+    return {"brands": brands_fig, "board_types": board_types_fig}
 
 
 async def get_equipment_quantity_stats(segment: str) -> dict:
