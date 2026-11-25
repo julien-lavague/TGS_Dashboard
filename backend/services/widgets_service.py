@@ -332,7 +332,7 @@ async def get_paywall_funnel_figure(segment: str, days: Optional[int] = None, si
 # Le choix des ailes dans le catalogue (onboarding et modale quiver de /sessions)
 # écrit `specs.product_id` dans user_equipments et, depuis son instrumentation,
 # l'élément `sail_catalog` dans ui_events.
-CATALOG_SOURCES = {"onboarding": "Onboarding", "quiver_prompt": "Modale quiver (sessions)"}
+CATALOG_SOURCES = {"onboarding": "Onboarding", "quiver_prompt": "Modale quiver (sessions)", "profile": "Profil (onglet Quiver)"}
 CATALOG_ORIGINS = {"add_product": "Modèle du catalogue", "add_size": "Taille seule"}
 
 
