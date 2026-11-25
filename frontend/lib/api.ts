@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse, ReleaseNote, ReleaseNoteCreate, ReleaseNotesResponse } from "./types";
+import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentDistributionResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse, ReleaseNote, ReleaseNoteCreate, ReleaseNotesResponse } from "./types";
 import type { Site } from "@/components/ui/SiteSelector";
 
 const client = axios.create({ baseURL: "/api" });
@@ -91,6 +91,10 @@ export const api = {
     getNames: (segment = "all") =>
       client
         .get<EquipmentNamesResponse>("/equipments/names", { params: { segment } })
+        .then((r) => r.data),
+    getDistribution: (segment = "all") =>
+      client
+        .get<EquipmentDistributionResponse>("/equipments/distribution", { params: { segment } })
         .then((r) => r.data),
     getCharacteristics: (segment = "all") =>
       client

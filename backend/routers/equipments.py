@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from schemas.usage import FigureResponse
-from services.equipments_service import get_equipment_coverage_figure, get_equipment_by_type_figure, get_equipment_names, get_equipment_characteristics, get_equipment_quantity_stats
+from services.equipments_service import get_equipment_coverage_figure, get_equipment_by_type_figure, get_equipment_names, get_equipment_distribution, get_equipment_characteristics, get_equipment_quantity_stats
 
 router = APIRouter(prefix="/api/equipments", tags=["equipments"])
 
@@ -28,3 +28,8 @@ async def equipment_characteristics(segment: str = Query("all")):
 @router.get("/quantity-stats")
 async def equipment_quantity_stats(segment: str = Query("all")):
     return await get_equipment_quantity_stats(segment)
+
+
+@router.get("/distribution")
+async def equipment_distribution(segment: str = Query("all")):
+    return await get_equipment_distribution(segment)

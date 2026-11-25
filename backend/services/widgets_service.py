@@ -24,6 +24,8 @@ from core.sites import filter_site
 INTERACTION_EVENTS = {
     "click", "open", "change", "search", "use", "trigger", "submit", "share", "paywall_click",
 }
+# Modales ouvertes par l'app sans geste : seul ce qu'on y clique compte.
+AUTO_OPENED = {"metric_intro"}
 
 # Tous les éléments suivis sur /sessions, par famille : un élément jamais
 # touché doit apparaître à 0 % et non disparaître du graphique.
@@ -42,7 +44,7 @@ ELEMENT_GROUPS = {
         "map_wind_edit", "map_poi", "map_zone", "map_zoom_out_to_all", "map_zoom_in_to_spot",
         "map_relief3d", "map_depth", "map_tide_tab",
     ],
-    "Modales": ["wind_sectors_editor", "live_report", "live_spot_detail", "tour", "guest_auth_prompt", "error_retry"],
+    "Modales": ["wind_sectors_editor", "live_report", "live_spot_detail", "metric_intro", "tour", "guest_auth_prompt", "error_retry"],
     "Premium": [
         "cta_arome_pi", "cta_timeline_column", "cta_timeline_banner", "cta_multisport",
         "cta_spot_limit", "cta_locked_badge", "cta_teaser_marker", "cta_slot_timeline",
@@ -122,7 +124,10 @@ async def get_element_usage_figure(segment: str, days: Optional[int] = None, sit
     if df_events.empty:
         return _empty_figure("Aucun événement ui_events sur la période")
 
-    used = df_events[df_events["event"].isin(INTERACTION_EVENTS)]
+    used = df_events[
+        df_events["event"].isin(INTERACTION_EVENTS)
+        & ~(df_events["element"].isin(AUTO_OPENED) & (df_events["event"] == "open"))
+    ]
     rows = []
     totals = {}
     for vp in ("mobile", "desktop"):

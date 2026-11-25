@@ -144,6 +144,11 @@ export interface EquipmentNamesResponse {
   sports: EquipmentSport[];
 }
 
+export interface EquipmentDistributionResponse {
+  brands: string;
+  board_types: string;
+}
+
 export interface EquipmentCharStat {
   sport: string;
   level: string;
