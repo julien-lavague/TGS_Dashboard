@@ -1,6 +1,8 @@
 # secrets
 .env
 *.json.bak
+# clé du compte de service GCP (onglet Dashboard)
+key.json
 
 # Python
 backend/_reload_sentinel.py

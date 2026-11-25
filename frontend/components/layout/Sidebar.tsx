@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { BackendStatus } from "./BackendStatus";
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/overview", label: "Overview" },
   { href: "/alerts", label: "Alerts" },
   { href: "/usage", label: "User Usage" },

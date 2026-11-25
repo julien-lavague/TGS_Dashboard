@@ -8,3 +8,6 @@ plotly==5.24.1
 anthropic==0.40.0
 pydantic-settings==2.6.1
 python-dotenv==1.0.1
+# Onglet Dashboard : statut des services GCP via les API REST
+google-auth==2.63.1
+requests==2.34.2

@@ -1,10 +1,17 @@
 import axios from "axios";
-import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentDistributionResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse, ReleaseNote, ReleaseNoteCreate, ReleaseNotesResponse } from "./types";
+import type { AlertsResponse, FigureResponse, UsersListResponse, AnonymousStatsResponse, SpotsPerProfileDetailResponse, ProfileCharacteristicsResponse, UserProfilesResponse, EquipmentNamesResponse, EquipmentDistributionResponse, EquipmentCharacteristicsResponse, EquipmentQuantityResponse, ReleaseNote, ReleaseNoteCreate, ReleaseNotesResponse, GcpStatusResponse } from "./types";
 import type { Site } from "@/components/ui/SiteSelector";
 
 const client = axios.create({ baseURL: "/api" });
 
 export const api = {
+  dashboard: {
+    getGcpStatus: (refresh = false) =>
+      client
+        .get<GcpStatusResponse>("/dashboard/gcp-status", { params: refresh ? { refresh: true } : {} })
+        .then((r) => r.data),
+  },
+
   alerts: {
     getSchedule: (segment = "release") =>
       client

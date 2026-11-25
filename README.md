@@ -33,6 +33,22 @@ CORS_ORIGINS=http://localhost:3000
 | `ANTHROPIC_API_KEY` | yes | Used by the Topic Analysis job |
 | `DASHBOARD_USER` / `DASHBOARD_PASSWORD` | yes | Basic-auth credentials for the dashboard |
 | `CORS_ORIGINS` | yes | Comma-separated allowed origins; keep `http://localhost:3000` for local dev |
+| `GCP_SERVICE_ACCOUNT_JSON` | on Railway | Service-account key (raw JSON or base64) used by the Dashboard tab to read Cloud Run / Cloud Scheduler status. Locally, leave empty: the backend falls back to ADC, then to the logged-in `gcloud` CLI |
+| `GCP_PROJECT` / `GCP_REGION` | no | Default `thegoodspots` / `europe-west4` |
+
+### GCP service account (Dashboard tab)
+
+Read-only account, created once:
+
+```bash
+gcloud iam service-accounts create tgs-dashboard-reader --project=thegoodspots --display-name="TGS dashboard (read-only)"
+SA=tgs-dashboard-reader@thegoodspots.iam.gserviceaccount.com
+gcloud projects add-iam-policy-binding thegoodspots --member=serviceAccount:$SA --role=roles/run.viewer
+gcloud projects add-iam-policy-binding thegoodspots --member=serviceAccount:$SA --role=roles/cloudscheduler.viewer
+gcloud iam service-accounts keys create key.json --iam-account=$SA
+```
+
+Paste the content of `key.json` into the Railway variable `GCP_SERVICE_ACCOUNT_JSON` of the backend service, then delete the local file.
 
 ---
 

@@ -214,3 +214,23 @@ export interface ReleaseNoteCreate {
   audience: ReleaseNoteAudience;
   items: ReleaseNoteItem[];
 }
+
+export type GcpItemStatus = "ok" | "error" | "running" | "unknown";
+
+export interface GcpStatusItem {
+  name: string;
+  kind: "Cloud Run job" | "Cloud Run service" | "Cloud Scheduler";
+  status: GcpItemStatus;
+  detail: string | null;
+  last_run: string | null;
+  /** Execution name for jobs, cron expression for schedulers. */
+  execution: string | null;
+}
+
+export interface GcpStatusResponse {
+  project: string;
+  region: string;
+  checked_at: string;
+  items: GcpStatusItem[];
+  source_errors: { source: string; message: string }[];
+}

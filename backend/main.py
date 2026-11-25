@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from auth import require_login
-from routers import alerts, overview, usage, profils, users, equipments, system, release_notes, widgets
+from routers import alerts, dashboard, overview, usage, profils, users, equipments, system, release_notes, widgets
 
 app = FastAPI(title="TGS Metrics Dashboard", version="0.1.0")
 
@@ -18,6 +18,7 @@ app.add_middleware(
 # /health below is intentionally left open for platform health checks.
 _auth = [Depends(require_login)]
 
+app.include_router(dashboard.router, dependencies=_auth)
 app.include_router(alerts.router, dependencies=_auth)
 app.include_router(overview.router, dependencies=_auth)
 app.include_router(usage.router, dependencies=_auth)
