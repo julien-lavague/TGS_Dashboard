@@ -234,3 +234,26 @@ export interface GcpStatusResponse {
   items: GcpStatusItem[];
   source_errors: { source: string; message: string }[];
 }
+
+export interface PendingPoiItem {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  created_at: string | null;
+}
+
+export interface PendingPoiGroup {
+  key: string;
+  label: string;
+  /** null when this source could not be read (see `error`). */
+  count: number | null;
+  error: string | null;
+  items: PendingPoiItem[];
+}
+
+export interface PendingPoiResponse {
+  total: number;
+  checked_at: string;
+  admin_url: string;
+  groups: PendingPoiGroup[];
+}

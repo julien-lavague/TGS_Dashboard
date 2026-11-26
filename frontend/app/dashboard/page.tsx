@@ -1,6 +1,7 @@
 "use client";
 
 import { GcpStatusWidget } from "@/components/dashboard/GcpStatusWidget";
+import { PendingPoiWidget } from "@/components/dashboard/PendingPoiWidget";
 
 export default function DashboardPage() {
   return (
@@ -12,6 +13,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
         <GcpStatusWidget />
+        <PendingPoiWidget />
       </div>
     </div>
   );
